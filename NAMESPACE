@@ -1,0 +1,17 @@
+S3method(plot,mest)
+S3method(plot,lar)
+S3method(plot,larinf)
+S3method(print,larinf)
+export(lar)
+export(larinf)
+export(mest)
+importFrom("graphics",
+           "abline",
+           "grconvertX",
+           "grconvertY",
+           "layout",
+           "lines",
+           "mtext",
+           "par",
+           "text")
+importFrom("stats", "qf", "qt")
