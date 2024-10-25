@@ -1,0 +1,52 @@
+---
+title: "Using the larinf package"
+author: "Karl Gregory"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Install with the R commands:
+
+```{r echo = FALSE}
+library(larinf)
+```
+
+
+```{r eval = FALSE}
+install.packages("devtools")
+devtools::install_github("gregorkb/larinf")
+```
+
+See the package documentation for details. 
+
+# Illustration on example data set
+
+Compute and plot the least angle regression path for the response vector and design matrix in the data set `facetemp`, which is included in the `larinf` package:
+
+```{r lar}
+data(facetemp)
+X <- facetemp$X
+y <- facetemp$y
+
+lar_out <- lar(X,y)
+plot(lar_out)
+```
+
+
+Obtain bootstrap confidence intervals for the entrance correlations and make a plot comparing inference on the least angle regression entrance correlations to classical inference on the regression coefficients:
+```{r larinf}
+larinf_out <- larinf(X,y)
+plot(larinf_out,omaadd=c(0,0,1,1))
+```
+
+
+Print the estimated entrance correlations with 95\% confidence intervals:
+```{r larinf_print}
+larinf_out
+```
