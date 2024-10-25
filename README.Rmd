@@ -1,5 +1,5 @@
 ---
-title: "Using the larinf package"
+title: "The larinf package"
 author: "Karl Gregory"
 date: "`r Sys.Date()`"
 output: md_document
@@ -8,6 +8,16 @@ output: md_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+# The larinf package
+
+Perform least angle regression inference with the bootstrap.
+
+<!-- This is an R package which accompanies the paper: -->
+
+<!-- Gregory, K. and Nordman, D. (2025+). Least angle regression inference. *In progress* -->
+
+<!-- Find the paper on the page https://imstat.org/journals-and-publications/annals-of-statistics/annals-of-statistics-future-papers/ -->
 
 Install with the R commands:
 
