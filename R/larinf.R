@@ -2,8 +2,9 @@
 #'
 #' Runs the least angle regression algorithm.
 #'
-#' @param X a design matrix (typically with columns centered to have mean zero and scaled to have root-n norm).
-#' @param y a response vector (typically centered to have mean zero).
+#' @param X a design matrix.
+#' @param y a response vector.
+#' @param rescale_y a logical. If `TRUE` then `y` is scaled by one over root n.
 #' @returns `lar` returns an object of class \code{lar}. An object of class \code{lar} is a list containing:
 #'
 #' \describe{
@@ -17,10 +18,13 @@
 #' \item{`ord`}{A vector giving the order in which the columns of `X` entered the active set.}
 #' \item{`nnew`}{A vector giving the number of the columns of `X` entering on each step.}
 #' \item{`varnames`}{The names of the columns of `X` if non-null.}
+#' \item{`ehat`}{The residuals.}
+#' \item{`rescale_y`}{The argument given for `rescale_y`.}
 #' }
 #'
 #' @details
-#' The function can accommodate tied entrances.
+#' The `lar()` function centers the response vector `y` and centers the columns of `X` and scales them to have
+#' unit norm before executing the least angle regression algorithm.  The function can accommodate tied entrances.
 #'
 #' @references
 #' Efron B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004) Least angle regression.
@@ -37,15 +41,15 @@
 #' n <- 100
 #' p <- 10
 #' sigma <- 1
-#' beta <- c(1,-1,2,-1.5,rep(0,p-4))
+#' b <- c(1,-1,2,-1.5,rep(0,p-4))
 #' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 #' chol_Sigma <- chol(Sigma)
 #'
-#' # generate data
-#' X <- scale(matrix(rnorm(n*p),n,p) %*% chol_Sigma)*sqrt(n/(n-1))
-#' mu <- drop(X %*% beta)
+#' # generate X and y
+#' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
+#' mu <- drop(X %*% b)
 #' e <- rnorm(n,0,sigma)
-#' y <- mu + e - mean(e)
+#' y <- mu + e
 #'
 #' # compute noiseless path and sample path
 #' lar_mu <- lar(X,mu)
@@ -54,9 +58,8 @@
 #' # plot noiseless path and overlay sample path
 #' plot(lar_mu)
 #' plot(lar_y,add = TRUE, lty = 3)
-#'
 #' @export
-lar <- function(X,y){
+lar <- function(X,y,rescale_y = T){
 
   tol <- 1e-12
 
@@ -64,6 +67,11 @@ lar <- function(X,y){
   n <- dm[1]
   p <- dm[2]
   K <- min(p,n-1)
+
+  # center and normalize columns of X, center y
+  X <- scale(X)/sqrt(n-1)
+  y <- y - mean(y)
+  if(rescale_y == T) y <- y / sqrt(n)
 
   # create some matrices to store output
   A <- numeric(K)
@@ -77,14 +85,14 @@ lar <- function(X,y){
 
   # initialize
   gram <- t(X) %*% X
-  c1 <- drop( (1/n) * t(X) %*% y )
+  c1 <- drop(t(X) %*% y)
   mu <- numeric(n)
   bk <- numeric(p)
   active0 <- integer()
   Lk <- NULL
   for(k in 1:(K + 1)){
 
-    ck <- c1 - drop((1/n) * t(X) %*% mu)
+    ck <- c1 - drop(t(X) %*% mu)
     Ck <- max(abs(ck))
 
     # these lines seem really sloppy
@@ -106,9 +114,9 @@ lar <- function(X,y){
 
     Gk <- chol2inv(t(Lk))
     s_active <- sign(ck[active])
-    Ak <- 1/(sqrt( n * sum(drop(Gk %*% s_active) * s_active)))
-    ak <- n * Ak * drop(X[,active,drop = FALSE] %*% drop(Gk %*% s_active))
-    wk <- drop(t(X) %*% ak) / n
+    Ak <- 1/(sqrt( sum(drop(Gk %*% s_active) * s_active)))
+    ak <- Ak * drop(X[,active,drop = FALSE] %*% drop(Gk %*% s_active))
+    wk <- drop(t(X) %*% ak)
 
     # update gamma
     r <- ck[-active]
@@ -130,8 +138,10 @@ lar <- function(X,y){
 
     }
 
+    gk <- gk
+
     mu <- mu + gk * ak
-    bk[active] <- bk[active] + gk * Gk %*% wk[active] * n
+    bk[active] <- bk[active] + gk * Gk %*% wk[active]
 
     # store some output
     A[k] <- Ak
@@ -180,7 +190,9 @@ lar <- function(X,y){
                  th = th,
                  ord = ord,
                  nnew = nnew,
-                 varnames = colnames(X))
+                 varnames = colnames(X),
+                 ehat = y - mu,
+                 rescale_y = rescale_y)
 
   class(output) <- "lar"
 
@@ -310,8 +322,9 @@ lar_asymp <- function(Sigma,cvec){
 
 #' Least angle regression inference
 #'
-#' @param X a design matrix with columns centered to have mean zero.
-#' @param y a response vector centered to have mean zero.
+#' @param X a design matrix.
+#' @param y a response vector.
+#' @param rescale_y a logical. If `TRUE` then `y` is scaled by one over root n.
 #' @param B the number of Monte Carlo draws for approximating the bootstrap distribution.
 #' @param alpha the significance level.
 #' @param thresh an argument passed to the `mest` function.
@@ -336,6 +349,10 @@ lar_asymp <- function(Sigma,cvec){
 #' @references
 #' Gregory, K. and Nordman, D. (2025+) Least angle regression inference. *In progress*
 #'
+#' @details
+#' The `larinf()` function centers the response vector `y` and centers the columns of `X` and scales them to have
+#' unit norm.
+#'
 #' @author Karl Gregory
 #'
 #' @seealso [plot.larinf()] for plotting and [print.larinf()] for printing the results of least angle regression inference and [mest()] for selecting the number of nonzero entrance correlations at which to threshold for the bootstrap.
@@ -345,47 +362,46 @@ lar_asymp <- function(Sigma,cvec){
 #' n <- 100
 #' p <- 10
 #' sigma <- 1
-#' beta <- c(1,-1,2,-1.5,rep(0,p-4))
+#' b <- c(1,-1,2,-1.5,rep(0,p-4))
 #' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 #' chol_Sigma <- chol(Sigma)
 #'
-#' # generate some data
-#' X <- scale(matrix(rnorm(n*p),n,p) %*% chol_Sigma)*sqrt(n/(n-1))
-#' mu <- drop(X %*% beta)
+#' # generate X and y
+#' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
+#' mu <- drop(X %*% b)
 #' e <- rnorm(n,0,sigma)
-#' y <- mu + e - mean(e)
+#' y <- mu + e
 #'
 #' # perform least angle regression inference
-#' larinf_out <- larinf(X,y)
+#' larinf_out<- larinf(X,y)
 #' plot(larinf_out)
-#' print(larinf_out)
-larinf <- function(X,y,B = 500, alpha = 0.05, thresh = 0.80, ncp = 0.1, m_bar = NULL){
+#' larinf_out
+larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, thresh = 0.80, ncp = 0.1, m_bar = NULL){
 
-  # check dimensions of X
-  n <- nrow(X)
-  p <- ncol(X)
+  dm <- dim(X)
+  n <- dm[1]
+  p <- dm[2]
 
-  if(p >= (n-1)) stop("Design matrix X has p >= n-1")
+  # center and normalize columns of X, center y
+  X <- scale(X) / sqrt(n-1)
+  y <- y - mean(y)
+  if(rescale_y == T) y <- y / sqrt(n)
 
-  # compute the lar path and store the full output
-  lar_out <- lar(X,y)
-
-  # compute sample lar path
+  lar_out <- lar(X,y,rescale_y = F)
   th_hat <- lar_out$th
+  e_hat <- lar_out$ehat
+  # if(any(th_hat == 0)) stop("Sample path has entrance correlations equal to zero")
 
-  if(any(th_hat == 0)) stop("Sample path has entrance correlations equal to zero")
+  sigma_hat <- sqrt(sum(e_hat^2)/(n - p)) * ifelse(rescale_y,sqrt(n),1)
 
-  mu_hat <- lar_out$mu
-  e_hat <- y - mu_hat
-  sigma_hat <- sqrt(sum(e_hat^2)/(n - p))
-
-  mest_out <- mest(X, y, thresh = thresh, ncp = ncp, m_bar = m_bar)
+  # estimate the number of nonzero entrance correlations
+  mest_out <- mest(lar_out, thresh = thresh, ncp = ncp, m_bar = m_bar)
 
   m_bar <- mest_out$m_bar
   th_bar <- mest_out$th_bar
   mu_bar <- mest_out$mu_bar
 
-  gram <- t(X) %*% X / n
+  gram <- t(X) %*% X
 
   R_boot <- matrix(0,B,p)
   resid_scl <- sqrt(n/(n-p))
@@ -398,7 +414,7 @@ larinf <- function(X,y,B = 500, alpha = 0.05, thresh = 0.80, ncp = 0.1, m_bar = 
 
     # generate bootstrap data with mu_bar
     y_boot <- mu_bar + e_boot - mean(e_boot)
-    c_boot <- t(X) %*% y_boot / n
+    c_boot <- t(X) %*% y_boot
 
     # run lar on the bootstrap data
     lar_boot_out <- lar_asymp(gram,c_boot)
@@ -414,7 +430,7 @@ larinf <- function(X,y,B = 500, alpha = 0.05, thresh = 0.80, ncp = 0.1, m_bar = 
     # obtain bootstrap version of sigma_hat
     mu_hat_boot <- drop(X %*% lar_boot_out$b[,p])
     e_hat_boot <- y_boot - mu_hat_boot
-    sigma_hat_boot <- sqrt(sum(e_hat_boot^2) / (n - p))
+    sigma_hat_boot <- sqrt(sum(e_hat_boot^2) / (n - p)) * ifelse(rescale_y,sqrt(n),1)
 
     R_boot[b,] <- (th_hat_boot - th_bar) / sigma_hat_boot
 
@@ -433,8 +449,8 @@ larinf <- function(X,y,B = 500, alpha = 0.05, thresh = 0.80, ncp = 0.1, m_bar = 
 
   # classical inference on slope coefficients
   Om <- solve(gram)
-  b_hat <- as.numeric(Om %*% t(X) %*% y / n)
-  se_b_hat <- sigma_hat * sqrt(diag(Om)) / sqrt(n)
+  b_hat <- as.numeric(Om %*% t(X) %*% y)
+  se_b_hat <- sigma_hat * sqrt(diag(Om)) * ifelse(rescale_y,1/sqrt(n),1)
 
   t_val <- qt(1-alpha/2,df = n-p)
   b_lo <- b_hat - t_val * se_b_hat
@@ -464,10 +480,9 @@ larinf <- function(X,y,B = 500, alpha = 0.05, thresh = 0.80, ncp = 0.1, m_bar = 
 #'
 #' Estimate the number of nonzero entrance correlations in the least angle regression path.
 #'
-#' @param X a design matrix with columns centered to have mean zero
-#' @param y a response vector centered to have mean zero
-#' @param thresh rejection threshold
-#' @param ncp explain later
+#' @param lar_out a `lar` object, such as returned by the `lar()` function.
+#' @param thresh the value xi as described in Gregory and Nordman (2025+).
+#' @param ncp the value c as described in Gregory and Nordman (2025+).
 #' @param m_bar a user-specified number of nonzero entrance correlations.
 #'
 #' @return `mest` returns an object of class `mest`. An object of class `mest` is a list containing:
@@ -475,7 +490,7 @@ larinf <- function(X,y,B = 500, alpha = 0.05, thresh = 0.80, ncp = 0.1, m_bar = 
 #' \describe{
 #'  \item{`m_bar`}{The selected number of nonzero entrance correlations.}
 #'  \item{`th_bar`}{A vector containing the thresholded entrance correlations.}
-#'  \item{`Wk`}{A vector containing the Wk values.}
+#'  \item{`W`}{A vector containing the Wk values.}
 #'  \item{`thresh`}{The value of the `thresh` argument.}
 #'  \item{`ncp`}{The value of the `ncp` argument.}
 #'  \item{`Fval`}{The quantile of the F distribution to which the Wk are compared.}
@@ -493,32 +508,33 @@ larinf <- function(X,y,B = 500, alpha = 0.05, thresh = 0.80, ncp = 0.1, m_bar = 
 #' n <- 100
 #' p <- 10
 #' sigma <- 1
-#' beta <- c(1,-1,2,-1.5,rep(0,p-4))
+#' b <- c(1,-1,2,-1.5,rep(0,p-4))
 #' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 #' chol_Sigma <- chol(Sigma)
 #'
-#' # generate data
-#' X <- scale(matrix(rnorm(n*p),n,p) %*% chol_Sigma)*sqrt(n/(n-1))
-#' mu <- drop(X %*% beta)
+#' # generate X and y
+#' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
+#' mu <- drop(X %*% b)
 #' e <- rnorm(n,0,sigma)
-#' y <- mu + e - mean(e)
+#' y <- mu + e
 #'
-#' # select the number of nonzero entrance correlations at which to threshold
-#' mest_out <- mest(X,y)
+#' # estimate the number of nonzero entrance correlations
+#' lar_out <- lar(X,y)
+#' mest_out <- mest(lar_out)
 #' plot(mest_out)
 #' @export
-mest <- function(X,y,thresh = 0.80,ncp = 0.1,m_bar = NULL){
+mest <- function(lar_out,thresh = 0.80,ncp = 0.1,m_bar = NULL){
 
-  lar_out <- lar(X,y)
-  n <- nrow(X)
-  p <- ncol(X)
+  n <- length(lar_out$mu)
+  p <- length(lar_out$th)
+  rescale_y <- lar_out$rescale_y
 
-  sigma_hat <- sqrt(sum((y - lar_out$mu)^2)/(n-p))
+  sigma_hat <- sqrt(sum(lar_out$ehat^2) / (n - p)) * ifelse(rescale_y,sqrt(n),1)
+
   A <- c(Inf,lar_out$A)
-  Wk <- n * diff(1/A^2) * lar_out$C^2 / sigma_hat^2
+  W <- diff(1/A^2) * lar_out$C^2 / sigma_hat^2 * ifelse(rescale_y,n,1)
   Fval <- qf(thresh,df1=1,df2=n-p,ncp = ncp*log(n))
 
-  # plot(Wk)
   if(thresh == 0){
 
     mu_bar <- lar_out$mu
@@ -527,12 +543,7 @@ mest <- function(X,y,thresh = 0.80,ncp = 0.1,m_bar = NULL){
 
   } else {
 
-    if(is.null(m_bar)){
-
-      # m_bar <- min(which((Wk > Fval) == FALSE)) - 1
-      m_bar <- sum(Wk > Fval)
-
-    }
+    if(is.null(m_bar)) m_bar <- sum(W > Fval)
 
   if(m_bar == 0){
 
@@ -564,7 +575,7 @@ mest <- function(X,y,thresh = 0.80,ncp = 0.1,m_bar = NULL){
   output <- list(m_bar = m_bar,
                  mu_bar = mu_bar,
                  th_bar = th_bar,
-                 Wk = Wk,
+                 W = W,
                  thresh = thresh,
                  ncp = ncp,
                  Fval = Fval)
@@ -574,7 +585,6 @@ mest <- function(X,y,thresh = 0.80,ncp = 0.1,m_bar = NULL){
   return(output)
 
 }
-
 
 
 #' Plot method for class `lar`
@@ -726,15 +736,15 @@ plot.mest <- function(x,...){
   op <- par(mar = c(4.1,4.1,1.1,1.1))
   layout( matrix(c(1,2),nrow = 1, byrow = TRUE))
 
-    plot(x$Wk,
+    plot(x$W,
          ylab = "Wk",
          xlab = "",
          pch = c(rep(19,x$m_bar),rep(1,length(x$th_bar) - x$m_bar)))
     abline(h = x$Fval,lty = 3)
 
-    plot(y = cumsum(x$Wk[length(x$Wk):1]),
-         x = length(x$Wk):1,
-         xlim = c(length(x$Wk),1),
+    plot(y = cumsum(x$W[length(x$W):1]),
+         x = length(x$W):1,
+         xlim = c(length(x$W),1),
          ylab = "Cumulative sum of Wk",
          xlab = "",
          pch = c(rep(1,length(x$th_bar) - x$m_bar),rep(19,x$m_bar)))

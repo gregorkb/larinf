@@ -4,16 +4,14 @@
 \alias{mest}
 \title{Estimate the number of nonzero entrance correlations}
 \usage{
-mest(X, y, thresh = 0.8, ncp = 0.1, m_bar = NULL)
+mest(lar_out, thresh = 0.8, ncp = 0.1, m_bar = NULL)
 }
 \arguments{
-\item{X}{a design matrix with columns centered to have mean zero}
+\item{lar_out}{a \code{lar} object, such as returned by the \code{lar()} function.}
 
-\item{y}{a response vector centered to have mean zero}
+\item{thresh}{the value xi as described in Gregory and Nordman (2025+).}
 
-\item{thresh}{rejection threshold}
-
-\item{ncp}{explain later}
+\item{ncp}{the value c as described in Gregory and Nordman (2025+).}
 
 \item{m_bar}{a user-specified number of nonzero entrance correlations.}
 }
@@ -23,7 +21,7 @@ mest(X, y, thresh = 0.8, ncp = 0.1, m_bar = NULL)
 \describe{
 \item{\code{m_bar}}{The selected number of nonzero entrance correlations.}
 \item{\code{th_bar}}{A vector containing the thresholded entrance correlations.}
-\item{\code{Wk}}{A vector containing the Wk values.}
+\item{\code{W}}{A vector containing the Wk values.}
 \item{\code{thresh}}{The value of the \code{thresh} argument.}
 \item{\code{ncp}}{The value of the \code{ncp} argument.}
 \item{\code{Fval}}{The quantile of the F distribution to which the Wk are compared.}
@@ -37,18 +35,19 @@ Estimate the number of nonzero entrance correlations in the least angle regressi
 n <- 100
 p <- 10
 sigma <- 1
-beta <- c(1,-1,2,-1.5,rep(0,p-4))
+b <- c(1,-1,2,-1.5,rep(0,p-4))
 Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 chol_Sigma <- chol(Sigma)
 
-# generate data
-X <- scale(matrix(rnorm(n*p),n,p) \%*\% chol_Sigma)*sqrt(n/(n-1))
-mu <- drop(X \%*\% beta)
+# generate X and y
+X <- matrix(rnorm(n*p),n,p) \%*\% chol_Sigma
+mu <- drop(X \%*\% b)
 e <- rnorm(n,0,sigma)
-y <- mu + e - mean(e)
+y <- mu + e
 
-# select the number of nonzero entrance correlations at which to threshold
-mest_out <- mest(X,y)
+# estimate the number of nonzero entrance correlations
+lar_out <- lar(X,y)
+mest_out <- mest(lar_out)
 plot(mest_out)
 }
 \references{

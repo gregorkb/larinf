@@ -4,12 +4,14 @@
 \alias{lar}
 \title{Least angle regression}
 \usage{
-lar(X, y)
+lar(X, y, rescale_y = T)
 }
 \arguments{
-\item{X}{a design matrix (typically with columns centered to have mean zero and scaled to have root-n norm).}
+\item{X}{a design matrix.}
 
-\item{y}{a response vector (typically centered to have mean zero).}
+\item{y}{a response vector.}
+
+\item{rescale_y}{a logical. If \code{TRUE} then \code{y} is scaled by one over root n.}
 }
 \value{
 \code{lar} returns an object of class \code{lar}. An object of class \code{lar} is a list containing:
@@ -25,28 +27,31 @@ lar(X, y)
 \item{\code{ord}}{A vector giving the order in which the columns of \code{X} entered the active set.}
 \item{\code{nnew}}{A vector giving the number of the columns of \code{X} entering on each step.}
 \item{\code{varnames}}{The names of the columns of \code{X} if non-null.}
+\item{\code{ehat}}{The residuals.}
+\item{\code{rescale_y}}{The argument given for \code{rescale_y}.}
 }
 }
 \description{
 Runs the least angle regression algorithm.
 }
 \details{
-The function can accommodate tied entrances.
+The \code{lar()} function centers the response vector \code{y} and centers the columns of \code{X} and scales them to have
+unit norm before executing the least angle regression algorithm.  The function can accommodate tied entrances.
 }
 \examples{
 # set parameters for generating data
 n <- 100
 p <- 10
 sigma <- 1
-beta <- c(1,-1,2,-1.5,rep(0,p-4))
+b <- c(1,-1,2,-1.5,rep(0,p-4))
 Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 chol_Sigma <- chol(Sigma)
 
-# generate data
-X <- scale(matrix(rnorm(n*p),n,p) \%*\% chol_Sigma)*sqrt(n/(n-1))
-mu <- drop(X \%*\% beta)
+# generate X and y
+X <- matrix(rnorm(n*p),n,p) \%*\% chol_Sigma
+mu <- drop(X \%*\% b)
 e <- rnorm(n,0,sigma)
-y <- mu + e - mean(e)
+y <- mu + e
 
 # compute noiseless path and sample path
 lar_mu <- lar(X,mu)
@@ -55,7 +60,6 @@ lar_y <- lar(X,y)
 # plot noiseless path and overlay sample path
 plot(lar_mu)
 plot(lar_y,add = TRUE, lty = 3)
-
 }
 \references{
 Efron B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004) Least angle regression.

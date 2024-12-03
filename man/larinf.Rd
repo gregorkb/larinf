@@ -4,12 +4,23 @@
 \alias{larinf}
 \title{Least angle regression inference}
 \usage{
-larinf(X, y, B = 500, alpha = 0.05, thresh = 0.8, ncp = 0.1, m_bar = NULL)
+larinf(
+  X,
+  y,
+  rescale_y = T,
+  B = 500,
+  alpha = 0.05,
+  thresh = 0.8,
+  ncp = 0.1,
+  m_bar = NULL
+)
 }
 \arguments{
-\item{X}{a design matrix with columns centered to have mean zero.}
+\item{X}{a design matrix.}
 
-\item{y}{a response vector centered to have mean zero.}
+\item{y}{a response vector.}
+
+\item{rescale_y}{a logical. If \code{TRUE} then \code{y} is scaled by one over root n.}
 
 \item{B}{the number of Monte Carlo draws for approximating the bootstrap distribution.}
 
@@ -41,25 +52,29 @@ larinf(X, y, B = 500, alpha = 0.05, thresh = 0.8, ncp = 0.1, m_bar = NULL)
 \description{
 Least angle regression inference
 }
+\details{
+The \code{larinf()} function centers the response vector \code{y} and centers the columns of \code{X} and scales them to have
+unit norm.
+}
 \examples{
 # set parameters for generating data
 n <- 100
 p <- 10
 sigma <- 1
-beta <- c(1,-1,2,-1.5,rep(0,p-4))
+b <- c(1,-1,2,-1.5,rep(0,p-4))
 Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 chol_Sigma <- chol(Sigma)
 
-# generate some data
-X <- scale(matrix(rnorm(n*p),n,p) \%*\% chol_Sigma)*sqrt(n/(n-1))
-mu <- drop(X \%*\% beta)
+# generate X and y
+X <- matrix(rnorm(n*p),n,p) \%*\% chol_Sigma
+mu <- drop(X \%*\% b)
 e <- rnorm(n,0,sigma)
-y <- mu + e - mean(e)
+y <- mu + e
 
 # perform least angle regression inference
-larinf_out <- larinf(X,y)
+larinf_out<- larinf(X,y)
 plot(larinf_out)
-print(larinf_out)
+larinf_out
 }
 \references{
 Gregory, K. and Nordman, D. (2025+) Least angle regression inference. \emph{In progress}

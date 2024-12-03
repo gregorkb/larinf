@@ -33,6 +33,7 @@
 #' data(facetemp)
 #' X <- facetemp$X
 #' y <- facetemp$y
+#'
 #' lar_out <- lar(X,y)
 #' larinf_out <- larinf(X,y)
 #'
@@ -42,7 +43,7 @@
 #' \dontrun{
 #' # This code shows how the facetemp data are constructed from the file 'FLIR_groups1and2.csv',
 #' # downloadable at https://physionet.org/content/face-oral-temp-data/1.0.0/
-#' data0 <- read.csv("../FLIR_groups1and2.csv",skip = 2, header = TRUE)
+#' data0 <- read.csv("facetemp_data/FLIR_groups1and2.csv",skip = 2, header = TRUE)
 #'
 #' # remove some columns
 #' colrm <- c(1,2,30,58,86,114,115,124,125)
@@ -51,12 +52,12 @@
 #' # remove rows with missing data
 #' data2 <- data1[apply(!is.na(data1),1,all),]
 #'
-#' # average the measurements from the four thermal images
+#' # average the measurements from the four images
 #' X1 <- data2[,1:27]
 #' X2 <- data2[,28:54]
 #' X3 <- data2[,55:81]
 #' X4 <- data2[,82:108]
-#' X <- (X1 + X2 + X3 + X4) / 4
+#' X <- as.matrix((X1 + X2 + X3 + X4) / 4)
 #'
 #' # keep only these measurements
 #' Tkeep <- c("T_LC_Dry1","T_LC_Wet1","T_RC_Dry1","T_RC_Wet1","T_FHCC1",
@@ -69,28 +70,31 @@
 #'                  "T_FHRC","T_FHLC","T_FHBC","T_FHTC","T_OR")
 #'
 #' # collect some more covariates
-#' X$T_atm <- data2$T_atm
-#' X$Humidity <- data2$Humidity
-#' X$Distance <- data2$Distance
-#' X$Male <- as.numeric(data2$Gender == "Male")
-#' X$Black <- as.numeric(data2$Ethnicity == "Black or African-American")
-#' X$White <- as.numeric(data2$Ethnicity == "White")
-#' X$Asian <- as.numeric(data2$Ethnicity == "Asian")
-#' X$Hisp <- as.numeric(data2$Ethnicity == "Hispanic/Latino")
-#' X$Cosmetics <- as.numeric(data2$Cosmetics)
-#' X$Age18_20 <- as.numeric(data2$Age == "18-20")
-#' X$Age21_25 <- as.numeric(data2$Age == "21-25")
-#' X$Age26_30 <- as.numeric(data2$Age == "26-30")
-#' X$Age31_40 <- as.numeric(data2$Age == "31-40")
+#' W <- cbind(data2$T_atm,
+#'            data2$Humidity,
+#'            data2$Distance,
+#'            as.numeric(data2$Gender == "Male"),
+#'            as.numeric(data2$Ethnicity == "Black or African-American"),
+#'            as.numeric(data2$Ethnicity == "White"),
+#'            as.numeric(data2$Ethnicity == "Asian"),
+#'            as.numeric(data2$Ethnicity == "Hispanic/Latino"),
+#'            as.numeric(data2$Cosmetics),
+#'            as.numeric(data2$Age == "18-20"),
+#'            as.numeric(data2$Age == "21-25"),
+#'            as.numeric(data2$Age == "26-30"),
+#'            as.numeric(data2$Age == "31-40"))
 #'
-#' # define the response vector
-#' y <- data2$aveOralM - mean(data2$aveOralM)
+#' colnames(W) <- c("T_atm","Humidity","Distance","Male","Black","White","Asian",
+#'                  "Hisp","Cosmetics","Age18_20","Age21_25","Age26_30","Age31_40")
 #'
-#' # center and scale the data
+#' define centered design matrix
 #' n <- nrow(X)
-#' X <- scale(X,center= TRUE, scale = TRUE)*sqrt(n/(n-1))
+#' Xn <- (diag(n) - matrix(1/n,n,n)) %*% cbind(X,W)
+#'
+#' # define centered response vector
+#' yn <- data2$aveOralM - mean(data2$aveOralM)
 #'
 #' # export the data set as a list
-#' facetemp <- list(X = X[,1:ncol(X)], y = y)
+#' facetemp <- list(Xn = Xn, yn = yn)
 #' }
 "facetemp"

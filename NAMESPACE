@@ -5,6 +5,8 @@ S3method(print,larinf)
 export(lar)
 export(larinf)
 export(mest)
+export(updateLk)
+export(lar_asymp)
 importFrom("graphics",
            "abline",
            "grconvertX",
