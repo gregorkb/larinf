@@ -34,7 +34,7 @@ plot(larinf_out,omaadd=c(0,0,1,1))
 \dontrun{
 # This code shows how the facetemp data are constructed from the file 'FLIR_groups1and2.csv',
 # downloadable at https://physionet.org/content/face-oral-temp-data/1.0.0/
-data0 <- read.csv("facetemp_data/FLIR_groups1and2.csv",skip = 2, header = TRUE)
+data0 <- read.csv(".../FLIR_groups1and2.csv",skip = 2, header = TRUE)
 
 # remove some columns
 colrm <- c(1,2,30,58,86,114,115,124,125)

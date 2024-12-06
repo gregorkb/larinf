@@ -5,7 +5,7 @@
 #' @param X a design matrix.
 #' @param y a response vector.
 #' @param rescale_y a logical. If `TRUE` then `y` is scaled by one over root n.
-#' @returns `lar` returns an object of class \code{lar}. An object of class \code{lar} is a list containing:
+#' @returns The `lar()` function returns an object of class \code{lar}. An object of class \code{lar} is a list containing:
 #'
 #' \describe{
 #' \item{`a`}{A matrix containing the sequence of equiangular vectors.}
@@ -30,7 +30,7 @@
 #' Efron B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004) Least angle regression.
 #' *Annals of Statistics*, **32(2)**: 407-499. [doi:10.1214/009053604000000067](https://doi.org/10.1214/009053604000000067)
 #'
-#' Gregory, K. and Nordman, D. (2025+) Least angle regression inference. *Work in progress*
+#' Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
 #'
 #' @author Karl Gregory
 #'
@@ -322,6 +322,8 @@ lar_asymp <- function(Sigma,cvec){
 
 #' Least angle regression inference
 #'
+#' Computes bootstrap confidence intervals for least angle regression entrance correlations.
+#'
 #' @param X a design matrix.
 #' @param y a response vector.
 #' @param rescale_y a logical. If `TRUE` then `y` is scaled by one over root n.
@@ -330,7 +332,7 @@ lar_asymp <- function(Sigma,cvec){
 #' @param thresh an argument passed to the `mest` function.
 #' @param ncp an argument passed to the `mest` function.
 #' @param m_bar optional argument fixing the number of nonzero entrance correlations at which to threshold.
-#' @return `larinf` returns an object of class `larinf`. An object of class `larinf` is a list containing:
+#' @return The `larinf()` function returns an object of class `larinf`. An object of class `larinf` is a list containing:
 #'
 #' \describe{
 #'  \item{`lo`}{The lower bounds of the entrance correlation confidence intervals.}
@@ -347,15 +349,14 @@ lar_asymp <- function(Sigma,cvec){
 #' }
 #'
 #' @references
-#' Gregory, K. and Nordman, D. (2025+) Least angle regression inference. *In progress*
+#' Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
 #'
 #' @details
-#' The `larinf()` function centers the response vector `y` and centers the columns of `X` and scales them to have
-#' unit norm.
+#' The `larinf()` function centers the response vector `y` and centers and normalizes the columns of `X`.
 #'
 #' @author Karl Gregory
 #'
-#' @seealso [plot.larinf()] for plotting and [print.larinf()] for printing the results of least angle regression inference and [mest()] for selecting the number of nonzero entrance correlations at which to threshold for the bootstrap.
+#' @seealso [plot.larinf()] for plotting and [print.larinf()] for printing the results of least angle regression inference. See [mest()] for selecting the number of nonzero entrance correlations at which to threshold for the bootstrap.
 #'
 #' @examples
 #' # set parameters for generating data
@@ -497,7 +498,7 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, thresh = 0.80, ncp =
 #' }
 #'
 #' @references
-#' Gregory, K. and Nordman, D. (2025+) Least angle regression inference. *In progress*
+#' Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
 #'
 #' @author Karl Gregory
 #'
@@ -607,15 +608,15 @@ mest <- function(lar_out,thresh = 0.80,ncp = 0.1,m_bar = NULL){
 #' n <- 100
 #' p <- 10
 #' sigma <- 1
-#' beta <- c(1,-1,2,-1.5,rep(0,p-4))
+#' b <- c(1,-1,2,-1.5,rep(0,p-4))
 #' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 #' chol_Sigma <- chol(Sigma)
 #'
-#' # generate data
-#' X <- scale(matrix(rnorm(n*p),n,p) %*% chol_Sigma)*sqrt(n/(n-1))
-#' mu <- drop(X %*% beta)
+#' # generate X and y
+#' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
+#' mu <- drop(X %*% b)
 #' e <- rnorm(n,0,sigma)
-#' y <- mu + e - mean(e)
+#' y <- mu + e
 #'
 #' # compute noiseless path and sample path
 #' lar_mu <- lar(X,mu)
@@ -773,18 +774,18 @@ plot.mest <- function(x,...){
 #' n <- 100
 #' p <- 10
 #' sigma <- 1
-#' beta <- c(1,-1,2,-1.5,rep(0,p-4))
+#' b <- c(1,-1,2,-1.5,rep(0,p-4))
 #' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 #' chol_Sigma <- chol(Sigma)
 #'
-#' # generate some data
-#' X <- scale(matrix(rnorm(n*p),n,p) %*% chol_Sigma)*sqrt(n/(n-1))
-#' mu <- drop(X %*% beta)
+#' # generate X and y
+#' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
+#' mu <- drop(X %*% b)
 #' e <- rnorm(n,0,sigma)
-#' y <- mu + e - mean(e)
+#' y <- mu + e
 #'
 #' # perform least angle regression inference
-#' larinf_out <- larinf(X,y)
+#' larinf_out<- larinf(X,y)
 #' plot(larinf_out)
 #'
 #' @export
@@ -971,18 +972,18 @@ updateLk <- function(Lk,Akk,ak,eps = .Machine$double.eps){
 #' n <- 100
 #' p <- 10
 #' sigma <- 1
-#' beta <- c(1,-1,2,-1.5,rep(0,p-4))
+#' b <- c(1,-1,2,-1.5,rep(0,p-4))
 #' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 #' chol_Sigma <- chol(Sigma)
 #'
-#' # generate some data
-#' X <- scale(matrix(rnorm(n*p),n,p) %*% chol_Sigma)*sqrt(n/(n-1))
-#' mu <- drop(X %*% beta)
+#' # generate X and y
+#' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
+#' mu <- drop(X %*% b)
 #' e <- rnorm(n,0,sigma)
-#' y <- mu + e - mean(e)
+#' y <- mu + e
 #'
 #' # perform least angle regression inference
-#' larinf_out <- larinf(X,y)
+#' larinf_out<- larinf(X,y)
 #' print(larinf_out)
 #'
 #' @export

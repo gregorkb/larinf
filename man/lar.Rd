@@ -14,7 +14,7 @@ lar(X, y, rescale_y = T)
 \item{rescale_y}{a logical. If \code{TRUE} then \code{y} is scaled by one over root n.}
 }
 \value{
-\code{lar} returns an object of class \code{lar}. An object of class \code{lar} is a list containing:
+The \code{lar()} function returns an object of class \code{lar}. An object of class \code{lar} is a list containing:
 
 \describe{
 \item{\code{a}}{A matrix containing the sequence of equiangular vectors.}
@@ -65,7 +65,7 @@ plot(lar_y,add = TRUE, lty = 3)
 Efron B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004) Least angle regression.
 \emph{Annals of Statistics}, \strong{32(2)}: 407-499. \href{https://doi.org/10.1214/009053604000000067}{doi:10.1214/009053604000000067}
 
-Gregory, K. and Nordman, D. (2025+) Least angle regression inference. \emph{Work in progress}
+Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
 }
 \seealso{
 \code{\link[=plot.lar]{plot.lar()}} for plotting the least angle regression path.

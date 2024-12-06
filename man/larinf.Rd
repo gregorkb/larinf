@@ -33,7 +33,7 @@ larinf(
 \item{m_bar}{optional argument fixing the number of nonzero entrance correlations at which to threshold.}
 }
 \value{
-\code{larinf} returns an object of class \code{larinf}. An object of class \code{larinf} is a list containing:
+The \code{larinf()} function returns an object of class \code{larinf}. An object of class \code{larinf} is a list containing:
 
 \describe{
 \item{\code{lo}}{The lower bounds of the entrance correlation confidence intervals.}
@@ -50,11 +50,10 @@ larinf(
 }
 }
 \description{
-Least angle regression inference
+Computes bootstrap confidence intervals for least angle regression entrance correlations.
 }
 \details{
-The \code{larinf()} function centers the response vector \code{y} and centers the columns of \code{X} and scales them to have
-unit norm.
+The \code{larinf()} function centers the response vector \code{y} and centers and normalizes the columns of \code{X}.
 }
 \examples{
 # set parameters for generating data
@@ -77,10 +76,10 @@ plot(larinf_out)
 larinf_out
 }
 \references{
-Gregory, K. and Nordman, D. (2025+) Least angle regression inference. \emph{In progress}
+Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
 }
 \seealso{
-\code{\link[=plot.larinf]{plot.larinf()}} for plotting and \code{\link[=print.larinf]{print.larinf()}} for printing the results of least angle regression inference and \code{\link[=mest]{mest()}} for selecting the number of nonzero entrance correlations at which to threshold for the bootstrap.
+\code{\link[=plot.larinf]{plot.larinf()}} for plotting and \code{\link[=print.larinf]{print.larinf()}} for printing the results of least angle regression inference. See \code{\link[=mest]{mest()}} for selecting the number of nonzero entrance correlations at which to threshold for the bootstrap.
 }
 \author{
 Karl Gregory

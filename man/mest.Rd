@@ -51,7 +51,7 @@ mest_out <- mest(lar_out)
 plot(mest_out)
 }
 \references{
-Gregory, K. and Nordman, D. (2025+) Least angle regression inference. \emph{In progress}
+Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
 }
 \seealso{
 \code{\link[=plot.mest]{plot.mest()}} for producing plots related to the selection of the number of nonzero entrance correlations.

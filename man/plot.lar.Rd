@@ -40,15 +40,15 @@ Make a cobweb plot of the least angle regression path based on the output of the
 n <- 100
 p <- 10
 sigma <- 1
-beta <- c(1,-1,2,-1.5,rep(0,p-4))
+b <- c(1,-1,2,-1.5,rep(0,p-4))
 Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
 chol_Sigma <- chol(Sigma)
 
-# generate data
-X <- scale(matrix(rnorm(n*p),n,p) \%*\% chol_Sigma)*sqrt(n/(n-1))
-mu <- drop(X \%*\% beta)
+# generate X and y
+X <- matrix(rnorm(n*p),n,p) \%*\% chol_Sigma
+mu <- drop(X \%*\% b)
 e <- rnorm(n,0,sigma)
-y <- mu + e - mean(e)
+y <- mu + e
 
 # compute noiseless path and sample path
 lar_mu <- lar(X,mu)
