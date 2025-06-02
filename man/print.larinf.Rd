@@ -7,12 +7,12 @@
 \method{print}{larinf}(x, ...)
 }
 \arguments{
-\item{x}{an object of class \code{larinf}, usuall the result of a call to \code{larinf}.}
+\item{x}{an object of class \code{larinf}, usually the result of a call to \code{larinf}.}
 
 \item{...}{further arguments.}
 }
 \description{
-Print a table of estimated entrance correlations with bootstrap confidence intervals.
+Print tables of output for least angle regression inference.
 }
 \examples{
 # set parameters for generating data
@@ -30,7 +30,7 @@ e <- rnorm(n,0,sigma)
 y <- mu + e
 
 # perform least angle regression inference
-larinf_out<- larinf(X,y)
+larinf_out <- larinf(X,y)
 print(larinf_out)
 
 }

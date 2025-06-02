@@ -4,36 +4,21 @@
 \alias{plot.lar}
 \title{Plot method for class \code{lar}}
 \usage{
-\method{plot}{lar}(
-  x,
-  main = "",
-  add = FALSE,
-  lty = 1,
-  xlim = NULL,
-  ylim = NULL,
-  which_lab = NULL,
-  ...
-)
+\method{plot}{lar}(x, omaadd = c(0, 0, 0, 0), madd = c(0, 0, 0, 0), m = NULL, ...)
 }
 \arguments{
-\item{x}{an object of class \code{lar}, usually the result of a call to \code{lar}.}
+\item{x}{an object of class \code{lar}, usually the result of a call to \code{lar}. The LAR path may not have tied entrances.}
 
-\item{main}{the main title of the plot.}
+\item{omaadd}{a vector of length 4 giving amounts to add to each of the four outer margins (which may be necessary to include longer variable names).}
 
-\item{add}{whether the cobweb plot should be added to the existing plot.}
+\item{madd}{a vector of length 4 giving amounts to add to each of the four inner margins (which may be necessary to include longer variable names).}
 
-\item{lty}{the line type.}
-
-\item{xlim}{the limits of the horizontal axis if \code{add == FALSE}.}
-
-\item{ylim}{the limits of the vertical axis if \code{add == FALSE}.}
-
-\item{which_lab}{optional vector giving the indices of variables to be labeled.}
+\item{m}{the number of steps out to which to plot the LAR path}
 
 \item{...}{additional arguments.}
 }
 \description{
-Make a cobweb plot of the least angle regression path based on the output of the \code{lar} function.
+Plot the steps of the LAR path based on the output of the \code{lar} function.
 }
 \examples{
 # set parameters for generating data
@@ -50,13 +35,13 @@ mu <- drop(X \%*\% b)
 e <- rnorm(n,0,sigma)
 y <- mu + e
 
-# compute noiseless path and sample path
+# compute population path and sample path
 lar_mu <- lar(X,mu)
 lar_y <- lar(X,y)
 
-# plot noiseless path and overlay sample path
+# plot population path and sample path
 plot(lar_mu)
-plot(lar_y,add = TRUE, lty = 3)
+plot(lar_y)
 
 }
 \author{

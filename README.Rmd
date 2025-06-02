@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # The larinf package
 
-Perform least angle regression inference with the bootstrap.
+Perform inference on the least angle regression (LAR) path.
 
 <!-- This is an R package which accompanies the paper: -->
 
@@ -47,14 +47,11 @@ plot(lar_out)
 ```
 
 
-Obtain bootstrap confidence intervals for the entrance correlations and make a plot comparing inference on the least angle regression entrance correlations to classical inference on the regression coefficients:
+Obtain bootstrap confidence intervals for the step correlations and the step coefficients up to the number of estimated steps:
 ```{r larinf}
 larinf_out <- larinf(X,y)
-plot(larinf_out,omaadd=c(0,0,1,1))
+plot(larinf_out)
+print(larinf_out)
 ```
 
 
-Print the estimated entrance correlations with 95\% confidence intervals:
-```{r larinf_print}
-larinf_out
-```

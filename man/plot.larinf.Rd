@@ -4,17 +4,30 @@
 \alias{plot.larinf}
 \title{Plot method for class \code{larinf}}
 \usage{
-\method{plot}{larinf}(x, omaadd = c(0, 0, 0, 0), ...)
+\method{plot}{larinf}(
+  x,
+  omaadd = c(0, 0, 0, 0),
+  madd = c(0, 0, 0, 0),
+  text = NULL,
+  m = NULL,
+  ...
+)
 }
 \arguments{
-\item{x}{an object of class \code{larinf}, usuall the result of a call to \code{larinf}.}
+\item{x}{an object of class \code{larinf}, usually the result of a call to \code{larinf}.}
 
 \item{omaadd}{a vector of length 4 giving amounts to add to each of the four outer margins (which may be necessary to include longer variable names).}
+
+\item{madd}{a vector of length 4 giving amounts to add to each of the four inner margins (which may be necessary to include longer variable names).}
+
+\item{text}{an optional argument giving text to be printed as a title on the plot}
+
+\item{m}{an optional argument giving the number of steps out to which to plot the results of LAR inference. The default is the estimated number of steps from the \code{mest()} function.}
 
 \item{...}{additional arguments.}
 }
 \description{
-Make a cobweb plot of the least angle regression path and display confidence intervals for the entrance correlations as well as for the regression coefficients.
+Plot of the inferred LAR path out to the estimated number of steps.
 }
 \examples{
 # set parameters for generating data

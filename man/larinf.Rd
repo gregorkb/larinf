@@ -4,16 +4,7 @@
 \alias{larinf}
 \title{Least angle regression inference}
 \usage{
-larinf(
-  X,
-  y,
-  rescale_y = T,
-  B = 500,
-  alpha = 0.05,
-  thresh = 0.8,
-  ncp = 0.1,
-  m_bar = NULL
-)
+larinf(X, y, rescale_y = T, B = 500, alpha = 0.05, m_bar = NULL)
 }
 \arguments{
 \item{X}{a design matrix.}
@@ -26,27 +17,25 @@ larinf(
 
 \item{alpha}{the significance level.}
 
-\item{thresh}{an argument passed to the \code{mest} function.}
-
-\item{ncp}{an argument passed to the \code{mest} function.}
-
-\item{m_bar}{optional argument fixing the number of nonzero entrance correlations at which to threshold.}
+\item{m_bar}{optional argument fixing the number of nonzero entrance correlations at which to threshold. By default the function estimates this with \code{mest()}.}
 }
 \value{
 The \code{larinf()} function returns an object of class \code{larinf}. An object of class \code{larinf} is a list containing:
 
 \describe{
-\item{\code{lo}}{The lower bounds of the entrance correlation confidence intervals.}
-\item{\code{up}}{The upper bounds of the entrance correlation confidence intervals.}
-\item{\code{rej}}{An indicator of whether the entrance correlation confidence intervals exclude zero.}
-\item{\code{b_lo}}{The lower bounds of the regression coefficient confidence intervals.}
-\item{\code{b_up}}{The upper bounds of the regression coefficient confidence intervals.}
-\item{\code{b_rej}}{An indicator of whether the regression coefficient confidence intervals exclude zero.}
-\item{\code{sigma_hat}}{The estimator of the error term standard deviation.}
-\item{\code{lar_out}}{The object returned by \code{lar(X,y)}.}
-\item{\code{mest_out}}{The object returned by \code{mest(X,y,thresh,ncp,m_bar)}.}
-\item{\code{B}}{The number of Monte Carlo draws used to approximate the bootstrap distribution.}
-\item{\code{alpha}}{The significance level.}
+\item{\code{lob}}{a matrix with each column giving the lower bound of the confidence interval for the step coefficients at the corresponding step.}
+\item{\code{upb}}{a matrix with each column giving the upper bound of the confidence interval for the step coefficients at the corresponding step.}
+\item{\code{b_bar}}{a matrix with each column giving the estimated step coefficients at a step. The number of columns is equal to the estimated number of steps in the population path, and the last column contains the coefficients corresponding to the orthogonal projection of the response on the span of the columns in the active set.}
+\item{\code{loC}}{a vector containing the lower limits of the confidence intervals for the step correlations.}
+\item{\code{upC}}{a vector containing the upper limits of the confidence intervals for the step correlations.}
+\item{\code{sigma_hat}}{the estimate of the error standard deviation.}
+\item{\code{lar_out}}{an object of class \code{lar} returned by a call to the \code{lar()} function.}
+\item{\code{mest_out}}{an object of class \code{mest} returned by a call to the \code{mest()} function.}
+\item{\code{actprob}}{a matrix giving the proportion of bootstrap samples on which each variable was active at each step.}
+\item{\code{B}}{the number of bootstrap samples drawn.}
+\item{\code{alpha}}{the significance level.}
+\item{\code{bm_lo}}{lower limits of the classical t-distribution-based confidence intervals for the regression coefficients in the model at the estimated number of steps. }
+\item{\code{bm_up}}{upper limits of the classical t-distribution-based confidence intervals for the regression coefficients in the model at the estimated number of steps. }
 }
 }
 \description{

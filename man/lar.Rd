@@ -20,10 +20,9 @@ The \code{lar()} function returns an object of class \code{lar}. An object of cl
 \item{\code{a}}{A matrix containing the sequence of equiangular vectors.}
 \item{\code{mu}}{The value of the terminal predictor.}
 \item{\code{A}}{A vector containing the sequence of angles.}
-\item{\code{C}}{A vector containing the absolute entrance correlations.}
+\item{\code{C}}{A vector containing the step correlations.}
 \item{\code{g}}{A vector containing the sequence of gamma values.}
-\item{\code{b}}{A matrix containing the sequence of regression coefficient vectors.}
-\item{\code{th}}{A vector containing the entrance correlations for the columns of \code{X}.}
+\item{\code{b}}{A matrix containing the sequence of step coefficient vectors.}
 \item{\code{ord}}{A vector giving the order in which the columns of \code{X} entered the active set.}
 \item{\code{nnew}}{A vector giving the number of the columns of \code{X} entering on each step.}
 \item{\code{varnames}}{The names of the columns of \code{X} if non-null.}
@@ -32,7 +31,7 @@ The \code{lar()} function returns an object of class \code{lar}. An object of cl
 }
 }
 \description{
-Runs the least angle regression algorithm.
+Runs the LAR algorithm.
 }
 \details{
 The \code{lar()} function centers the response vector \code{y} and centers the columns of \code{X} and scales them to have
@@ -53,13 +52,13 @@ mu <- drop(X \%*\% b)
 e <- rnorm(n,0,sigma)
 y <- mu + e
 
-# compute noiseless path and sample path
+# compute population path and sample path
 lar_mu <- lar(X,mu)
 lar_y <- lar(X,y)
 
-# plot noiseless path and overlay sample path
+# plot population path and sample path
 plot(lar_mu)
-plot(lar_y,add = TRUE, lty = 3)
+plot(lar_y)
 }
 \references{
 Efron B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004) Least angle regression.

@@ -2,33 +2,26 @@
 % Please edit documentation in R/larinf.R
 \name{mest}
 \alias{mest}
-\title{Estimate the number of nonzero entrance correlations}
+\title{Estimate the number of steps in the prototypical LAR path}
 \usage{
-mest(lar_out, thresh = 0.8, ncp = 0.1, m_bar = NULL)
+mest(lar_out, m_bar = NULL)
 }
 \arguments{
 \item{lar_out}{a \code{lar} object, such as returned by the \code{lar()} function.}
 
-\item{thresh}{the value xi as described in Gregory and Nordman (2025+).}
-
-\item{ncp}{the value c as described in Gregory and Nordman (2025+).}
-
-\item{m_bar}{a user-specified number of nonzero entrance correlations.}
+\item{m_bar}{a user-specified number of nonzero step correlations.}
 }
 \value{
 \code{mest} returns an object of class \code{mest}. An object of class \code{mest} is a list containing:
 
 \describe{
-\item{\code{m_bar}}{The selected number of nonzero entrance correlations.}
-\item{\code{th_bar}}{A vector containing the thresholded entrance correlations.}
-\item{\code{W}}{A vector containing the Wk values.}
-\item{\code{thresh}}{The value of the \code{thresh} argument.}
-\item{\code{ncp}}{The value of the \code{ncp} argument.}
-\item{\code{Fval}}{The quantile of the F distribution to which the Wk are compared.}
+\item{\code{m_bar}}{The selected number of nonzero step correlations.}
+\item{\code{mu_bar}}{The projection of the response onto the space spanned by the columns of \code{X} in the active set on step \code{m_bar}.}
+\item{\code{SW}}{A vector containing the sum statistics.}
 }
 }
 \description{
-Estimate the number of nonzero entrance correlations in the least angle regression path.
+Estimate the number of nonzero step correlations in a prototypical least angle regression path.
 }
 \examples{
 # set parameters for generating data
@@ -54,7 +47,7 @@ plot(mest_out)
 Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
 }
 \seealso{
-\code{\link[=plot.mest]{plot.mest()}} for producing plots related to the selection of the number of nonzero entrance correlations.
+\code{\link[=plot.mest]{plot.mest()}} for producing plots related to the selection of the number of nonzero step correlations.
 }
 \author{
 Karl Gregory

@@ -14,4 +14,7 @@ importFrom("graphics",
            "mtext",
            "par",
            "text")
-importFrom("stats", "qf", "qt")
+importFrom("stats", "qchisq", "qt")
+importFrom("grDevices", "rgb")
+importFrom("graphics", "axis", "polygon")
+importFrom("stats", "quantile")
