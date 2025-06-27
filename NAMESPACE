@@ -4,6 +4,7 @@ S3method(plot,larinf)
 S3method(print,larinf)
 export(lar)
 export(larinf)
+export(lar_gram)
 export(mest)
 importFrom("graphics",
            "abline",

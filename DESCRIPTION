@@ -4,7 +4,7 @@ Title: Least angle regression inference
 Version: 0.1.0
 Author: Karl Gregory
 Maintainer: Karl Gregory <gregorkb@stat.sc.edu>
-Description: Implements the bootstrap method in Gregory and Nordman (2025+) for constructing confidence intervals for the least angle regression entrance correlations.
+Description: Implements the bootstrap in Gregory and Nordman (2025+) for least angle regression inference.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

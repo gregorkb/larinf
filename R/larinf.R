@@ -297,7 +297,6 @@ lar_gram <- function(gram,cvec){
   return(output)
 
 }
-
 #' Least angle regression inference
 #'
 #' Computes bootstrap confidence intervals for least angle regression entrance correlations.
@@ -377,7 +376,6 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
 
   # estimate the number of nonzero entrance correlations
   mest_out <- mest(lar_out, m_bar = m_bar)
-
   m_bar <- mest_out$m_bar
 
   if(m_bar == 0){
@@ -387,16 +385,17 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
 
   }
 
-  mu_bar <- mest_out$mu_bar
-
-  # construct b_bar and C_bar
-  b_bar <- lar(X,mu_bar,rescale_y = FALSE)$b[,1:m_bar,drop = FALSE]
-  b_bar <- cbind(b_bar,b_bar[,m_bar] %*% matrix(1,nrow=1,ncol=p-m_bar))
-  C_bar <- c(C_hat[1:m_bar],rep(0,p-m_bar))
-
+  # compute the gram matrix
   gram <- t(X) %*% X
 
-  B_boot <- array(0,dim=c(p,p,B))
+  # define b_bar, mu_bar, and C_bar
+  b_bar <- b_hat[,1:m_bar,drop = FALSE]
+  Am_bar <- lar_out$ord[1:m_bar]
+  b_bar[Am_bar,m_bar] <- solve(gram[Am_bar,Am_bar]) %*% t(X[,Am_bar]) %*% y
+  mu_bar <- drop(X %*% b_bar[,m_bar])
+  C_bar <- c(C_hat[1:m_bar],rep(0,p-m_bar))
+
+  B_boot <- array(0,dim=c(p,m_bar,B))
   T_boot <- matrix(0,B,p)
 
   ord_boot <- matrix(0,B,p)
@@ -433,7 +432,12 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
     e_hat_boot <- y_boot - mu_hat_boot
     sigma_hat_boot <- sqrt(sum(e_hat_boot^2) / (n - p)) * ifelse(rescale_y,sqrt(n),1)
 
-    B_boot[,,b] <- (b_hat_boot - b_bar) / sigma_hat_boot
+    # get b_bar_boot
+    b_bar_boot <- b_hat_boot[,1:m_bar,drop = FALSE]
+    Am_bar_boot <- lar_boot_out$ord[1:m_bar]
+    b_bar_boot[Am_bar_boot,m_bar] <- solve(gram[Am_bar_boot,Am_bar_boot]) %*% t(X[,Am_bar_boot]) %*% y_boot
+
+    B_boot[,,b] <- (b_bar_boot - b_bar) / sigma_hat_boot
     T_boot[b,] <- s_hat_boot * dA_hat_boot * (C_hat_boot - C_bar) / sigma_hat_boot
 
     b <- b + 1
@@ -444,9 +448,8 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
   Bloalpha2 <- apply(B_boot,c(1,2),function(x) quantile(x,probs=alpha/2))
   Bupalpha2 <- apply(B_boot,c(1,2),function(x) quantile(x,probs=1-alpha/2))
 
-  lob <- b_hat - Bupalpha2 * sigma_hat
-  upb <- b_hat - Bloalpha2 * sigma_hat
-  rejb <- (sign(upb) == sign(lob)) & (sign(lob) != 0)
+  lob <- b_bar - Bupalpha2 * sigma_hat
+  upb <- b_bar - Bloalpha2 * sigma_hat
 
   # construct bootstrap CIs for the step correlations Ck
   li <- ceiling((alpha/2)*B)
@@ -471,19 +474,6 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
 
   }
 
-  # classical inference on selected step coefficients at step m_bar
-  active <- lar_out$ord[1:m_bar]
-  Om <- solve(t(X[,active])%*%X[,active])
-  bm_hat <- numeric(p)
-  bm_hat[active] <- as.numeric(Om %*% t(X[,active]) %*% y)
-  se_bm_hat <- sigma_hat * sqrt(diag(Om)) * ifelse(rescale_y,1/sqrt(n),1)
-
-  t_val <- qt(1-alpha/2,df = n-length(active))
-  bm_lo <- numeric(p)
-  bm_up <- numeric(p)
-  bm_lo[active] <- bm_hat[active] - t_val * se_bm_hat
-  bm_up[active] <- bm_hat[active] + t_val * se_bm_hat
-
   # keep track of the bootstrap probability of active set membership for each variable
   actprob <- matrix(0,p,p)
   for(j in 1:p)
@@ -497,7 +487,7 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
 
   output <- list(lob = lob,
                  upb = upb,
-                 b_bar = b_bar[,1:m_bar,drop = FALSE],
+                 b_bar = b_bar,
                  loC = loC,
                  upC = upC,
                  sigma_hat = sigma_hat,
@@ -505,15 +495,230 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
                  mest_out = mest_out,
                  actprob = actprob,
                  B = B,
-                 alpha = alpha,
-                 bm_lo = bm_lo,
-                 bm_up = bm_up)
+                 alpha = alpha)
 
   class(output) <- "larinf"
 
   return(output)
 
 }
+
+#' #' Least angle regression inference
+#' #'
+#' #' Computes bootstrap confidence intervals for least angle regression entrance correlations.
+#' #'
+#' #' @param X a design matrix.
+#' #' @param y a response vector.
+#' #' @param rescale_y a logical. If `TRUE` then `y` is scaled by one over root n.
+#' #' @param B the number of Monte Carlo draws for approximating the bootstrap distribution.
+#' #' @param alpha the significance level.
+#' #' @param m_bar optional argument fixing the number of nonzero entrance correlations at which to threshold. By default the function estimates this with `mest()`.
+#' #' @return The `larinf()` function returns an object of class `larinf`. An object of class `larinf` is a list containing:
+#' #'
+#' #' \describe{
+#' #' \item{`lob`}{a matrix with each column giving the lower bound of the confidence interval for the step coefficients at the corresponding step.}
+#' #' \item{`upb`}{a matrix with each column giving the upper bound of the confidence interval for the step coefficients at the corresponding step.}
+#' #' \item{`b_bar`}{a matrix with each column giving the estimated step coefficients at a step. The number of columns is equal to the estimated number of steps in the population path, and the last column contains the coefficients corresponding to the orthogonal projection of the response on the span of the columns in the active set.}
+#' #' \item{`loC`}{a vector containing the lower limits of the confidence intervals for the step correlations.}
+#' #' \item{`upC`}{a vector containing the upper limits of the confidence intervals for the step correlations.}
+#' #' \item{`sigma_hat`}{the estimate of the error standard deviation.}
+#' #' \item{`lar_out`}{an object of class `lar` returned by a call to the `lar()` function.}
+#' #' \item{`mest_out`}{an object of class `mest` returned by a call to the `mest()` function.}
+#' #' \item{`actprob`}{a matrix giving the proportion of bootstrap samples on which each variable was active at each step.}
+#' #' \item{`B`}{the number of bootstrap samples drawn.}
+#' #' \item{`alpha`}{the significance level.}
+#' #' \item{`bm_lo`}{lower limits of the classical t-distribution-based confidence intervals for the regression coefficients in the model at the estimated number of steps. }
+#' #' \item{`bm_up`}{upper limits of the classical t-distribution-based confidence intervals for the regression coefficients in the model at the estimated number of steps. }
+#' #' }
+#' #'
+#' #' @references
+#' #' Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
+#' #'
+#' #' @details
+#' #' The `larinf()` function centers the response vector `y` and centers and normalizes the columns of `X`.
+#' #'
+#' #' @author Karl Gregory
+#' #'
+#' #' @seealso [plot.larinf()] for plotting and [print.larinf()] for printing the results of least angle regression inference. See [mest()] for selecting the number of nonzero entrance correlations at which to threshold for the bootstrap.
+#' #'
+#' #' @examples
+#' #' # set parameters for generating data
+#' #' n <- 100
+#' #' p <- 10
+#' #' sigma <- 1
+#' #' b <- c(1,-1,2,-1.5,rep(0,p-4))
+#' #' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
+#' #' chol_Sigma <- chol(Sigma)
+#' #'
+#' #' # generate X and y
+#' #' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
+#' #' mu <- drop(X %*% b)
+#' #' e <- rnorm(n,0,sigma)
+#' #' y <- mu + e
+#' #'
+#' #' # perform least angle regression inference
+#' #' larinf_out<- larinf(X,y)
+#' #' plot(larinf_out)
+#' #' larinf_out
+#' larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
+#'
+#'   dm <- dim(X)
+#'   n <- dm[1]
+#'   p <- dm[2]
+#'
+#'   # center and normalize columns of X, center y
+#'   X <- scale(X) / sqrt(n-1)
+#'   y <- y - mean(y)
+#'   if(rescale_y == T) y <- y / sqrt(n)
+#'
+#'   lar_out <- lar(X,y,rescale_y = F)
+#'   b_hat <- lar_out$b
+#'   e_hat <- lar_out$ehat
+#'   s_hat <- lar_out$s
+#'   dA_hat <- c(1,sqrt(diff(1/lar_out$A^2)))
+#'   C_hat <- lar_out$C
+#'
+#'   sigma_hat <- sqrt(sum(e_hat^2)/(n - p)) * ifelse(rescale_y,sqrt(n),1)
+#'
+#'   # estimate the number of nonzero entrance correlations
+#'   mest_out <- mest(lar_out, m_bar = m_bar)
+#'
+#'   m_bar <- mest_out$m_bar
+#'
+#'   if(m_bar == 0){
+#'
+#'     print("Number of non-zero step correlations estimated to be zero.")
+#'     return(NULL)
+#'
+#'   }
+#'
+#'   mu_bar <- mest_out$mu_bar
+#'
+#'   # construct b_bar and C_bar
+#'   b_bar <- lar(X,mu_bar,rescale_y = FALSE)$b[,1:m_bar,drop = FALSE]
+#'   b_bar <- cbind(b_bar,b_bar[,m_bar] %*% matrix(1,nrow=1,ncol=p-m_bar))
+#'   C_bar <- c(C_hat[1:m_bar],rep(0,p-m_bar))
+#'
+#'   gram <- t(X) %*% X
+#'
+#'   B_boot <- array(0,dim=c(p,p,B))
+#'   T_boot <- matrix(0,B,p)
+#'
+#'   ord_boot <- matrix(0,B,p)
+#'   resid_scl <- sqrt(n/(n-p))
+#'
+#'   b <- 1
+#'   while(b < B){
+#'
+#'     # draw bootstrap residuals
+#'     e_boot <- sample(e_hat,n,replace = TRUE) * resid_scl
+#'
+#'     # generate bootstrap data with mu_bar
+#'     y_boot <- mu_bar + e_boot - mean(e_boot)
+#'     c_boot <- t(X) %*% y_boot
+#'
+#'     # run lar on the bootstrap data
+#'     lar_boot_out <- lar_gram(gram,c_boot)
+#'     b_hat_boot <- lar_boot_out$b
+#'     s_hat_boot <- lar_boot_out$s
+#'     C_hat_boot <- lar_boot_out$C
+#'     dA_hat_boot <- c(1,sqrt(diff(1/lar_boot_out$A^2)))
+#'
+#'     if(length(lar_boot_out$A) < p){
+#'
+#'       print("bootstrap lar path had fewer than p steps - discarding")
+#'       next;
+#'
+#'     }
+#'
+#'     ord_boot[b,] <- lar_boot_out$ord
+#'
+#'     # obtain bootstrap version of sigma_hat
+#'     mu_hat_boot <- drop(X %*% lar_boot_out$b[,p])
+#'     e_hat_boot <- y_boot - mu_hat_boot
+#'     sigma_hat_boot <- sqrt(sum(e_hat_boot^2) / (n - p)) * ifelse(rescale_y,sqrt(n),1)
+#'
+#'     B_boot[,,b] <- (b_hat_boot - b_bar) / sigma_hat_boot
+#'     T_boot[b,] <- s_hat_boot * dA_hat_boot * (C_hat_boot - C_bar) / sigma_hat_boot
+#'
+#'     b <- b + 1
+#'
+#'   }
+#'
+#'   # construct bootstrap confidence intervals for the bk
+#'   Bloalpha2 <- apply(B_boot,c(1,2),function(x) quantile(x,probs=alpha/2))
+#'   Bupalpha2 <- apply(B_boot,c(1,2),function(x) quantile(x,probs=1-alpha/2))
+#'
+#'   lob <- b_hat - Bupalpha2 * sigma_hat
+#'   upb <- b_hat - Bloalpha2 * sigma_hat
+#'   rejb <- (sign(upb) == sign(lob)) & (sign(lob) != 0)
+#'
+#'   # construct bootstrap CIs for the step correlations Ck
+#'   li <- ceiling((alpha/2)*B)
+#'   ui <- ceiling((1 - alpha/2)*B)
+#'   Talpha2 <- apply(T_boot,2,sort)[c(li,ui),,drop = FALSE]
+#'
+#'   loC <- numeric(p)
+#'   upC <- numeric(p)
+#'   for(k in 1:p){
+#'
+#'     if(s_hat[k] == 1){
+#'
+#'       loC[k] <- max(0,C_hat[k] - Talpha2[2,k] * sigma_hat / dA_hat[k] * s_hat[k])
+#'       upC[k] <- C_hat[k] - Talpha2[1,k] * sigma_hat / dA_hat[k] * s_hat[k]
+#'
+#'     } else if(s_hat[k] == -1){
+#'
+#'       loC[k] <- max(0,C_hat[k] - Talpha2[1,k] * sigma_hat / dA_hat[k] * s_hat[k])
+#'       upC[k] <- C_hat[k] - Talpha2[2,k] * sigma_hat / dA_hat[k] * s_hat[k]
+#'
+#'     }
+#'
+#'   }
+#'
+#'   # classical inference on selected step coefficients at step m_bar
+#'   active <- lar_out$ord[1:m_bar]
+#'   Om <- solve(t(X[,active])%*%X[,active])
+#'   bm_hat <- numeric(p)
+#'   bm_hat[active] <- as.numeric(Om %*% t(X[,active]) %*% y)
+#'   se_bm_hat <- sigma_hat * sqrt(diag(Om)) * ifelse(rescale_y,1/sqrt(n),1)
+#'
+#'   t_val <- qt(1-alpha/2,df = n-length(active))
+#'   bm_lo <- numeric(p)
+#'   bm_up <- numeric(p)
+#'   bm_lo[active] <- bm_hat[active] - t_val * se_bm_hat
+#'   bm_up[active] <- bm_hat[active] + t_val * se_bm_hat
+#'
+#'   # keep track of the bootstrap probability of active set membership for each variable
+#'   actprob <- matrix(0,p,p)
+#'   for(j in 1:p)
+#'     for(k in 1:p){
+#'
+#'       actprob[j,k] <- mean(apply(ord_boot[,1:k,drop= FALSE] == j,1,any))
+#'
+#'     }
+#'
+#'   rownames(actprob) <- lar_out$varnames
+#'
+#'   output <- list(lob = lob,
+#'                  upb = upb,
+#'                  b_bar = b_bar[,1:m_bar,drop = FALSE],
+#'                  loC = loC,
+#'                  upC = upC,
+#'                  sigma_hat = sigma_hat,
+#'                  lar_out = lar_out,
+#'                  mest_out = mest_out,
+#'                  actprob = actprob,
+#'                  B = B,
+#'                  alpha = alpha,
+#'                  bm_lo = bm_lo,
+#'                  bm_up = bm_up)
+#'
+#'   class(output) <- "larinf"
+#'
+#'   return(output)
+#'
+#' }
 
 
 #' Estimate the number of steps in the prototypical LAR path
@@ -634,6 +839,7 @@ mest <- function(lar_out,m_bar = NULL){
 #' @param omaadd a vector of length 4 giving amounts to add to each of the four outer margins (which may be necessary to include longer variable names).
 #' @param madd a vector of length 4 giving amounts to add to each of the four inner margins (which may be necessary to include longer variable names).
 #' @param m the number of steps out to which to plot the LAR path
+#' @param mlabel the number of steps out to which to print labels for the variables
 #' @param ... additional arguments.
 #'
 #' @author Karl Gregory
@@ -662,7 +868,7 @@ mest <- function(lar_out,m_bar = NULL){
 #' plot(lar_y)
 #'
 #' @export
-plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, ...){
+plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, mlabel = NULL,...){
 
 
   if(any(x$nnew) > 1) stop("LAR path has tied entrances: This plot function is not yet set up to depict paths with tied entrances.")
@@ -680,6 +886,7 @@ plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, ...){
   lab <- x$varnames
   if(is.null(lab)) lab <- paste(1:p)
   if(is.null(m)) m <- length(ord)
+  if(is.null(mlabel)) mlabel <- m
 
   plot(NA,
        xlim = c(1,m),
@@ -691,8 +898,6 @@ plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, ...){
 
   axis(1,at = 1:m,labels = paste(1:m))
 
-  abline(h = 0,lty = 3,col = "gray")
-
   for(j in ord){
 
     kj <- which(ord == j)
@@ -701,7 +906,7 @@ plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, ...){
 
   }
 
-  for(k in 1:m){
+  for(k in 1:mlabel){
 
     jk <- ord[k]
 
@@ -724,8 +929,6 @@ plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, ...){
 
   axis(1,at = 0:m,labels = paste(0:m))
 
-  abline(h = 0,lty = 3, col="gray")
-
   for(j in ord){
 
     kj <- which(ord == j)
@@ -734,12 +937,16 @@ plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, ...){
 
       lines(c(0,b[j,1:m])~c(0:m), lty = j, col = j)
 
-      text(x = m,
-           y = b[j,m],
-           pos = 4,
-           labels = lab[j],
-           xpd = NA,
-           cex = 0.8)
+      if(kj <= mlabel){
+
+        text(x = m,
+             y = b[j,m],
+             pos = 4,
+             labels = lab[j],
+             xpd = NA,
+             cex = 0.8)
+
+      }
 
     }
 
@@ -837,116 +1044,152 @@ plot.mest <- function(x,...){
 #' plot(larinf_out)
 #'
 #' @export
-plot.larinf <- function(x,omaadd=c(0,0,0,0),madd=c(0,0,0,0),text = NULL,m=NULL,...){
+plot.larinf <- function(x,omaadd=c(0,0,0,0),madd=c(0,0,0,0),text = NULL,m=NULL,which = 1,...){
 
-  # collect values from x
-  lab <- x$lar_out$varnames
-  th <- x$lar_out$th
-  C <- x$lar_out$C
-  ord <- x$lar_out$ord
-  b_bar <- as.matrix(x$b_bar)
-  b <- x$lar_out$b
-  p <- nrow(b)
-  lob <- cbind(0,x$lob)
-  upb <- cbind(0,x$upb)
-  m_bar <- x$mest_out$m_bar
-  C_bar <- c(C[1:m_bar],0)
-  cc <- x$lar_out$cc
-  loC <- x$loC
-  upC <- x$upC
+  if(which == 1){
 
-  if(is.null(lab)) lab <- paste(1:p)
-  if(is.null(m)) m <- m_bar
+    # collect values from x
+    lab <- x$lar_out$varnames
+    th <- x$lar_out$th
+    C <- x$lar_out$C
+    ord <- x$lar_out$ord
+    b_bar <- as.matrix(x$b_bar)
+    b <- x$lar_out$b
+    p <- nrow(b)
+    lob <- cbind(0,x$lob)
+    upb <- cbind(0,x$upb)
+    m_bar <- x$mest_out$m_bar
+    C_bar <- c(C[1:m_bar],0)
+    cc <- x$lar_out$cc
+    loC <- x$loC
+    upC <- x$upC
 
-  # set up graphical parameters
-  op <- par(mfrow=c(1,2),
-            mar=c(4.1,4.1,1.1,2.1) + madd,
-            oma = c(0,0,0,0) + omaadd)
+    if(is.null(lab)) lab <- paste(1:p)
+    if(is.null(m)) m <- m_bar
 
-  # plot Cks
-  plot(NA,
-       xlim = c(1,m),
-       ylim = range(c(0,loC,upC)),
-       xlab = "Step",
-       ylab = "Step correlations",
-       bty ="l",
-       xaxt = "n")
+    # set up graphical parameters
+    op <- par(mfrow=c(1,2),
+              mar=c(4.1,4.1,1.1,2.1) + madd,
+              oma = c(0,0,0,0) + omaadd)
 
-  axis(1,at = 1:m,labels = paste(1:m))
+    # plot Cks
+    plot(NA,
+         xlim = c(1,m),
+         ylim = range(c(0,loC,upC)),
+         xlab = "Step",
+         ylab = "Step correlations",
+         bty ="l",
+         xaxt = "n")
 
-  abline(h = 0,lty = 3,col = "gray")
+    axis(1,at = 1:m,labels = paste(1:m))
 
-  for(k in 1:m){
+    for(k in 1:m){
 
-    lines(y = c(loC[k],upC[k]),
-          x = rep(k,2),
-          col = "darkgray")
+      lines(y = c(loC[k],upC[k]),
+            x = rep(k,2),
+            col = "darkgray")
 
-  }
+    }
 
-  xpoly <- c(1:m,m:1)
-  ypoly <- c(loC[1:m],upC[m:1])
-  polygon(x = xpoly,
-          y = ypoly,
-          col = rgb(0,0,0,.1),
-          border = NA)
-
-  for(k in 1:m){
-
-    jk <- ord[k]
-
-    lines(abs(cc[jk,1:m]),col = jk,lty = jk)
-
-    text(x = k,
-         y = abs(cc[jk,k]),
-         pos = 4,
-         labels = lab[jk],
-         xpd = NA,
-         cex = 0.8)
-
-  }
-
-  # plot bks
-  plot(NA,
-       xlim = c(0,m),
-       ylim = range(lob[,1:(m+1)],upb[,1:(m+1)]),
-       xlab = "Step",
-       ylab = "Step coefficients",
-       bty = "l",
-       xaxt = "n")
-
-  axis(1,at = 0:m,labels = paste(0:m))
-
-  abline(h = 0,lty = 3, col="gray")
-
-  k <- 1
-  for(j in ord[1:m]){
-
-    xpoly <- c((k-1):m,m:(k-1))
-    ypoly <- c(0,lob[j,(k+1):(m+1)],upb[j,(m+1):(k+1)],0)
+    xpoly <- c(1:m,m:1)
+    ypoly <- c(loC[1:m],upC[m:1])
     polygon(x = xpoly,
             y = ypoly,
             col = rgb(0,0,0,.1),
             border = NA)
 
-    for(l in k:m){
+    for(k in 1:m){
 
-      lines(x = rep(l-1,2),
-            y = c(lob[j,l],upb[j,l]),
-            col = "darkgray")
+      jk <- ord[k]
+
+      lines(abs(cc[jk,1:m]),col = jk,lty = jk)
+
+      text(x = k,
+           y = abs(cc[jk,k]),
+           pos = 4,
+           labels = lab[jk],
+           xpd = NA,
+           cex = 0.8)
 
     }
 
-    lines(c(0,b_bar[j,1:m])~c(0:m), lty = j, col = j)
+    # plot bks
+    plot(NA,
+         xlim = c(0,m),
+         ylim = range(lob[,1:(m+1)],upb[,1:(m+1)]),
+         xlab = "Step",
+         ylab = "Step coefficients",
+         bty = "l",
+         xaxt = "n")
 
-    text(x = m,
-         y = b_bar[j,m],
-         pos = 4,
-         labels = lab[j],
-         xpd = NA,
-         cex = 0.8)
+    axis(1,at = 0:m,labels = paste(0:m))
 
-    k <- k + 1
+    k <- 1
+    for(j in ord[1:m]){
+
+      xpoly <- c((k-1):m,m:(k-1))
+      ypoly <- c(0,lob[j,(k+1):(m+1)],upb[j,(m+1):(k+1)],0)
+      polygon(x = xpoly,
+              y = ypoly,
+              col = rgb(0,0,0,.1),
+              border = NA)
+
+      for(l in k:m){
+
+        lines(x = rep(l-1,2),
+              y = c(lob[j,l],upb[j,l]),
+              col = "darkgray")
+
+      }
+
+      lines(c(0,b_bar[j,1:m])~c(0:m), lty = j, col = j)
+
+      text(x = m,
+           y = b_bar[j,m],
+           pos = 4,
+           labels = lab[j],
+           xpd = NA,
+           cex = 0.8)
+
+      k <- k + 1
+
+    }
+
+    } else if(which == 2){
+
+    mest_out <- x$mest_out
+
+    SW <- mest_out$SW
+    m_bar <- mest_out$m_bar
+    n <- length(mest_out$mu_bar)
+    p <- length(SW)
+
+    op <- par(mar = c(4.1,4.1,1.1,1.1), mfrow = c(1,2))
+
+    plot(y = SW[p:1],
+         x = p:1,
+         xlim = c(1,p),
+         ylab = "Tail sum statistics",
+         xlab = "Step",
+         bty = "l",
+         pch = c(rep(1,p - m_bar),rep(19,m_bar)))
+
+    lines(y=qchisq(1-1/n,df=1:p),x=p:1, lty = 3)
+
+
+    actprob <- x$actprob
+    plot(NA,
+         xlim = c(0,p),
+         ylim = c(0,1),
+         xlab = "Step",
+         ylab = "Bootstrap active set membership",
+         bty = "l")
+
+    for(j in 1:p){
+
+      lines(c(0,actprob[j,])~c(0:p), col = j, lty = j)
+
+    }
 
   }
 
@@ -959,6 +1202,7 @@ plot.larinf <- function(x,omaadd=c(0,0,0,0),madd=c(0,0,0,0),text = NULL,m=NULL,.
 
   par(op)
   layout(1)
+
 
 
 }
