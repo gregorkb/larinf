@@ -10,6 +10,7 @@
   madd = c(0, 0, 0, 0),
   text = NULL,
   m = NULL,
+  which = 1,
   ...
 )
 }
@@ -23,6 +24,8 @@
 \item{text}{an optional argument giving text to be printed as a title on the plot}
 
 \item{m}{an optional argument giving the number of steps out to which to plot the results of LAR inference. The default is the estimated number of steps from the \code{mest()} function.}
+
+\item{which}{if equal to 1, the inferred LAR path is plotted; if equal to 2 diagnostic plots are plotted, i.e. the tail sum statistics and the bootstrap probability of active set membership at each step for each variable. Equal to 1 by default.}
 
 \item{...}{additional arguments.}
 }

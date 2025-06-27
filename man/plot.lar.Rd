@@ -4,7 +4,14 @@
 \alias{plot.lar}
 \title{Plot method for class \code{lar}}
 \usage{
-\method{plot}{lar}(x, omaadd = c(0, 0, 0, 0), madd = c(0, 0, 0, 0), m = NULL, ...)
+\method{plot}{lar}(
+  x,
+  omaadd = c(0, 0, 0, 0),
+  madd = c(0, 0, 0, 0),
+  m = NULL,
+  mlabel = NULL,
+  ...
+)
 }
 \arguments{
 \item{x}{an object of class \code{lar}, usually the result of a call to \code{lar}. The LAR path may not have tied entrances.}
@@ -14,6 +21,8 @@
 \item{madd}{a vector of length 4 giving amounts to add to each of the four inner margins (which may be necessary to include longer variable names).}
 
 \item{m}{the number of steps out to which to plot the LAR path}
+
+\item{mlabel}{the number of steps out to which to print labels for the variables}
 
 \item{...}{additional arguments.}
 }
