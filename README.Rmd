@@ -54,9 +54,11 @@ plot(larinf_out)
 print(larinf_out)
 ```
 
-Produce diagnostic plots:
+Show diagnostic plots:
 ```{r diag}
 plot(larinf_out, which = 2)
 ```
+
+
 
 
