@@ -30,12 +30,10 @@ The \code{larinf()} function returns an object of class \code{larinf}. An object
 \item{\code{upC}}{a vector containing the upper limits of the confidence intervals for the step correlations.}
 \item{\code{sigma_hat}}{the estimate of the error standard deviation.}
 \item{\code{lar_out}}{an object of class \code{lar} returned by a call to the \code{lar()} function.}
-\item{\code{mest_out}}{an object of class \code{mest} returned by a call to the \code{mest()} function.}
+\item{\code{mest_out}}{a list containing information relevant to the estimation of the number of nonzero step correlations.}
 \item{\code{actprob}}{a matrix giving the proportion of bootstrap samples on which each variable was active at each step.}
 \item{\code{B}}{the number of bootstrap samples drawn.}
 \item{\code{alpha}}{the significance level.}
-\item{\code{bm_lo}}{lower limits of the classical t-distribution-based confidence intervals for the regression coefficients in the model at the estimated number of steps. }
-\item{\code{bm_up}}{upper limits of the classical t-distribution-based confidence intervals for the regression coefficients in the model at the estimated number of steps. }
 }
 }
 \description{

@@ -23,11 +23,14 @@ The \code{lar()} function returns an object of class \code{lar}. An object of cl
 \item{\code{C}}{A vector containing the step correlations.}
 \item{\code{g}}{A vector containing the sequence of gamma values.}
 \item{\code{b}}{A matrix containing the sequence of step coefficient vectors.}
+\item{\code{cc}}{A matrix containing the correlations of each column of \code{X} with the residual across all LAR steps.}
+\item{\code{s}}{A vector giving the sign which which the entering variable on each step was signed.}
 \item{\code{ord}}{A vector giving the order in which the columns of \code{X} entered the active set.}
 \item{\code{nnew}}{A vector giving the number of the columns of \code{X} entering on each step.}
 \item{\code{varnames}}{The names of the columns of \code{X} if non-null.}
 \item{\code{ehat}}{The residuals.}
 \item{\code{rescale_y}}{The argument given for \code{rescale_y}.}
+\item{\code{delta}}{The largest delta for which the separation conditions in Theorem 4.2 of Gregory and Nordman (2025+) are satisfied for this LAR path.}
 }
 }
 \description{

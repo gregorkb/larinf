@@ -14,11 +14,14 @@
 #' \item{`C`}{A vector containing the step correlations.}
 #' \item{`g`}{A vector containing the sequence of gamma values.}
 #' \item{`b`}{A matrix containing the sequence of step coefficient vectors.}
+#' \item{`cc`}{A matrix containing the correlations of each column of `X` with the residual across all LAR steps.}
+#' \item{`s`}{A vector giving the sign which which the entering variable on each step was signed.}
 #' \item{`ord`}{A vector giving the order in which the columns of `X` entered the active set.}
 #' \item{`nnew`}{A vector giving the number of the columns of `X` entering on each step.}
 #' \item{`varnames`}{The names of the columns of `X` if non-null.}
 #' \item{`ehat`}{The residuals.}
 #' \item{`rescale_y`}{The argument given for `rescale_y`.}
+#' \item{`delta`}{The largest delta for which the separation conditions in Theorem 4.2 of Gregory and Nordman (2025+) are satisfied for this LAR path.}
 #' }
 #'
 #' @details
@@ -317,12 +320,10 @@ lar_gram <- function(gram,cvec){
 #' \item{`upC`}{a vector containing the upper limits of the confidence intervals for the step correlations.}
 #' \item{`sigma_hat`}{the estimate of the error standard deviation.}
 #' \item{`lar_out`}{an object of class `lar` returned by a call to the `lar()` function.}
-#' \item{`mest_out`}{an object of class `mest` returned by a call to the `mest()` function.}
+#' \item{`mest_out`}{a list containing information relevant to the estimation of the number of nonzero step correlations.}
 #' \item{`actprob`}{a matrix giving the proportion of bootstrap samples on which each variable was active at each step.}
 #' \item{`B`}{the number of bootstrap samples drawn.}
 #' \item{`alpha`}{the significance level.}
-#' \item{`bm_lo`}{lower limits of the classical t-distribution-based confidence intervals for the regression coefficients in the model at the estimated number of steps. }
-#' \item{`bm_up`}{upper limits of the classical t-distribution-based confidence intervals for the regression coefficients in the model at the estimated number of steps. }
 #' }
 #'
 #' @references
