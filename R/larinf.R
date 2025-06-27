@@ -198,8 +198,8 @@ lar <- function(X,y,rescale_y = T){
 }
 
 
-# Compute the lar path based on the gram matrix gram = t(X) %*%X and the vector
-# of marginal correlations cvec = t(X) %*% y. Faster than lar() if gram already computed.
+#' Compute the lar path based on the gram matrix gram = t(X) %*%X and the vector of marginal correlations cvec = t(X) %*% y. Faster than lar() if gram already computed.
+#' @noRd
 lar_gram <- function(gram,cvec){
 
   tol <- 1e-10
@@ -333,7 +333,7 @@ lar_gram <- function(gram,cvec){
 #'
 #' @author Karl Gregory
 #'
-#' @seealso [plot.larinf()] for plotting and [print.larinf()] for printing the results of least angle regression inference. See [mest()] for selecting the number of nonzero entrance correlations at which to threshold for the bootstrap.
+#' @seealso [plot.larinf()] for plotting and [print.larinf()] for printing the results of least angle regression inference.
 #'
 #' @examples
 #' # set parameters for generating data
@@ -505,47 +505,7 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
 
 
 #' Estimate the number of steps in the prototypical LAR path
-#'
-#' Estimate the number of nonzero step correlations in a prototypical least angle regression path.
-#'
-#' @param lar_out a `lar` object, such as returned by the `lar()` function.
-#' @param m_bar a user-specified number of nonzero step correlations.
-#'
-#' @return `mest` returns an object of class `mest`. An object of class `mest` is a list containing:
-#'
-#' \describe{
-#'  \item{`m_bar`}{The selected number of nonzero step correlations.}
-#'  \item{`mu_bar`}{The projection of the response onto the space spanned by the columns of `X` in the active set on step `m_bar`.}
-#'  \item{`SW`}{A vector containing the sum statistics.}
-#' }
-#'
-#' @references
-#' Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
-#'
-#' @author Karl Gregory
-#'
-#' @seealso [plot.mest()] for producing plots related to the selection of the number of nonzero step correlations.
-#'
-#' @examples
-#' # set parameters for generating data
-#' n <- 100
-#' p <- 10
-#' sigma <- 1
-#' b <- c(1,-1,2,-1.5,rep(0,p-4))
-#' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
-#' chol_Sigma <- chol(Sigma)
-#'
-#' # generate X and y
-#' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
-#' mu <- drop(X %*% b)
-#' e <- rnorm(n,0,sigma)
-#' y <- mu + e
-#'
-#' # estimate the number of nonzero entrance correlations
-#' lar_out <- lar(X,y)
-#' mest_out <- mest(lar_out)
-#' plot(mest_out)
-#' @export
+#' @noRd
 mest <- function(lar_out,m_bar = NULL){
 
   n <- length(lar_out$mu)
@@ -739,60 +699,6 @@ plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, mlabel
   layout(1)
 
 }
-
-#' Plot method for class `mest`
-#'
-#' Make plots related to the selection of the number of nonzero entrance correlations at which to threshold.
-#'
-#' @param x an object of class `mest`, usually the result of a call to `mest`.
-#' @param ... further arguments.
-#'
-#' @author Karl Gregory
-#'
-#' @examples
-#' # set parameters for generating data
-#' n <- 100
-#' p <- 10
-#' sigma <- 1
-#' b <- c(1,-1,2,-1.5,rep(0,p-4))
-#' Sigma <- (1/2)^abs(outer(1:p,1:p,FUN = "-"))
-#' chol_Sigma <- chol(Sigma)
-#'
-#' # generate X and y
-#' X <- matrix(rnorm(n*p),n,p) %*% chol_Sigma
-#' mu <- drop(X %*% b)
-#' e <- rnorm(n,0,sigma)
-#' y <- mu + e
-#'
-#' # estimate the number of nonzero entrance correlations
-#' lar_out <- lar(X,y)
-#' mest_out <- mest(lar_out)
-#' plot(mest_out)
-#'
-#' @export
-plot.mest <- function(x,...){
-
-  SW <- x$SW
-  m_bar <- x$m_bar
-  n <- length(x$mu_bar)
-  p <- length(SW)
-
-  op <- par(mar = c(4.1,4.1,1.1,1.1))
-
-  plot(y = SW[p:1],
-       x = p:1,
-       xlim = c(1,p),
-       ylab = "Sum statistics",
-       xlab = "Step",
-       pch = c(rep(1,p - m_bar),rep(19,m_bar)))
-
-  lines(y=qchisq(1-1/n,df=1:p),x=p:1, lty = 3)
-
-  par(op)
-  layout(1)
-
-}
-
 
 #' Plot method for class `larinf`
 #'
@@ -992,7 +898,8 @@ plot.larinf <- function(x,omaadd=c(0,0,0,0),madd=c(0,0,0,0),text = NULL,m=NULL,w
 }
 
 
-# Update the Cholesky decomposition
+#' Update the Cholesky decomposition
+#' @noRd
 updateLk <- function(Lk,Akk,ak,eps = .Machine$double.eps){
 
   if(is.null(Lk)){

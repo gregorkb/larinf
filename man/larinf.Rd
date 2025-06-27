@@ -68,7 +68,7 @@ larinf_out
 Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
 }
 \seealso{
-\code{\link[=plot.larinf]{plot.larinf()}} for plotting and \code{\link[=print.larinf]{print.larinf()}} for printing the results of least angle regression inference. See \code{\link[=mest]{mest()}} for selecting the number of nonzero entrance correlations at which to threshold for the bootstrap.
+\code{\link[=plot.larinf]{plot.larinf()}} for plotting and \code{\link[=print.larinf]{print.larinf()}} for printing the results of least angle regression inference.
 }
 \author{
 Karl Gregory
