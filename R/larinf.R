@@ -4,7 +4,6 @@
 #'
 #' @param X a design matrix.
 #' @param y a response vector.
-#' @param rescale_y a logical. If `TRUE` then `y` is scaled by one over root n.
 #' @returns The `lar()` function returns an object of class \code{lar}. An object of class \code{lar} is a list containing:
 #'
 #' \describe{
@@ -15,24 +14,26 @@
 #' \item{`g`}{A vector containing the sequence of gamma values.}
 #' \item{`b`}{A matrix containing the sequence of step coefficient vectors.}
 #' \item{`cc`}{A matrix containing the correlations of each column of `X` with the residual across all LAR steps.}
-#' \item{`s`}{A vector giving the sign which which the entering variable on each step was signed.}
+#' \item{`s`}{A vector containing the signs with which the variables were signed upon entrance to the active set.}
 #' \item{`ord`}{A vector giving the order in which the columns of `X` entered the active set.}
 #' \item{`nnew`}{A vector giving the number of the columns of `X` entering on each step.}
 #' \item{`varnames`}{The names of the columns of `X` if non-null.}
-#' \item{`ehat`}{The residuals.}
-#' \item{`rescale_y`}{The argument given for `rescale_y`.}
-#' \item{`delta`}{The largest delta for which the separation conditions in Theorem 4.2 of Gregory and Nordman (2025+) are satisfied for this LAR path.}
+#' \item{`ehat`}{The residuals upon termination of LAR.}
+#' \item{`bn`}{Step coefficients transformed to the original scale of the data, with an intercept included, to account for the centering step.}
+#' \item{`tau`}{The largest tau for which condition M1 was satisfied for this LAR path.}
+#' \item{`delta`}{The largest delta for which condition M2 was satisfied for this LAR path.}
 #' }
 #'
 #' @details
-#' The `lar()` function centers the response vector `y` and centers the columns of `X` and scales them to have
-#' unit norm before executing the least angle regression algorithm.  The function can accommodate tied entrances.
+#' The `lar()` function will center the columns of `X` and then scaled them to have unit norm.
+#' Likewise, it will center `y` and scale the centered version by one over the square root of
+#' the sample size. The function can accommodate tied entrances.
 #'
 #' @references
 #' Efron B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004) Least angle regression.
 #' *Annals of Statistics*, **32(2)**: 407-499. [doi:10.1214/009053604000000067](https://doi.org/10.1214/009053604000000067)
 #'
-#' Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
+#' Gregory, K. B., & Nordman, D. J. (2026). New explanations and inference for least angle regression. *arXiv preprint arXiv:2602.02491*.
 #'
 #' @author Karl Gregory
 #'
@@ -61,7 +62,7 @@
 #' plot(lar_mu)
 #' plot(lar_y)
 #' @export
-lar <- function(X,y,rescale_y = T){
+lar <- function(X,y){
 
   tol <- 1e-12
 
@@ -70,10 +71,16 @@ lar <- function(X,y,rescale_y = T){
   p <- dm[2]
   K <- min(p,n-1)
 
-  # center and normalize columns of X, center y
-  X <- scale(X)/sqrt(n-1)
-  y <- y - mean(y)
-  if(rescale_y == T) y <- y / sqrt(n)
+  varnames <- colnames(X)
+
+  # center and rescale response and design columns
+  xbar <- apply(X,2,mean)
+  X <- X - matrix(xbar,n,p,byrow=T)
+  xnorm <- sqrt(apply(X**2,2,sum))
+  X <- X %*% diag(1/xnorm)
+  ybar <- mean(y)
+  y <- y - ybar
+  y <- y / sqrt(n)
 
   # create some matrices to store output
   A <- numeric(K)
@@ -85,7 +92,6 @@ lar <- function(X,y,rescale_y = T){
   s <- integer()
   ord <- integer()
   nnew <- integer(K)
-  delta <- Inf # this is going to be my delta from Theorem 1.
 
   # initialize
   gram <- t(X) %*% X
@@ -94,6 +100,8 @@ lar <- function(X,y,rescale_y = T){
   bk <- numeric(p)
   active0 <- integer()
   Lk <- NULL
+  tau <- 1 # tau appearing in M1
+  delta <- max(abs(c1)) - sort(abs(c1),decreasing = T)[2] # delta appearing in M2
   for(k in 1:(K + 1)){
 
     ck <- c1 - drop(t(X) %*% mu)
@@ -107,8 +115,6 @@ lar <- function(X,y,rescale_y = T){
     if(Ck < tol * 100 | k == (K+1)) break
     # can sometimes have issues here; Ck is really zero but is not close enough to zero to be under the specified tolerance
     # for this reason I added the condition k == (K + 1)
-
-    delta <- min(delta,Ck - abs(ck[-active])) # update delta
 
     for(i in new){
 
@@ -132,6 +138,11 @@ lar <- function(X,y,rescale_y = T){
       sort_gk <- sort(gkj[-active])
       gk <- sort_gk[1]
 
+      # update tau
+      check <- which((abs(wk[-active])/Ak <= abs(ck[-active])/Ck) & (sign(wk[-active]) == sign(ck[-active])))
+      val <- 1 - abs(ck[-active])/Ck
+      tau <- min(c(tau,val[check])) # update tau
+
       if((gk < (Ck / Ak - tol)) & (length(sort_gk) > 2)){
         # if LAR is going to terminate after this update (that is if this is step m), then
         # all the gkj[-active] will be equal to Ck/Ak, so the delta condition does not
@@ -139,7 +150,7 @@ lar <- function(X,y,rescale_y = T){
         # Also, we check if there is only one remaining variable, in which case that
         # variable MUST be chosen in the last step, so the delta condition does not apply.
 
-        delta <- min(delta,(sort_gk[2] - gk)*Ak)
+        delta <- min(delta,(sort_gk[2] - gk)*Ak) # update delta in M2
 
       }
 
@@ -170,14 +181,20 @@ lar <- function(X,y,rescale_y = T){
 
   }
 
-  m <- k-1
+  m <- k - 1
 
+  # trim vectors/matrices of extra entries/columns
   A <- A[1:m]
   a <- a[,1:m]
   C <- C[1:m]
   g <- g[1:m]
   b <- b[,1:m,drop = FALSE]
   nnew <- nnew[1:m]
+
+  # give regression coefficients, including intercept, on scale of original data
+  bn <- matrix(0,p+1,m)
+  bn[1,] <- ybar - sqrt(n) * t(b) %*% (xbar/xnorm)
+  bn[-1,] <- sqrt(n)* b / xnorm
 
   output <- list(a = a,
                  mu = mu,
@@ -189,9 +206,10 @@ lar <- function(X,y,rescale_y = T){
                  s = s,
                  ord = ord,
                  nnew = nnew,
-                 varnames = colnames(X),
+                 varnames = varnames,
                  ehat = y - mu,
-                 rescale_y = rescale_y,
+                 bn = bn,
+                 tau = tau,
                  delta = delta)
 
   class(output) <- "lar"
@@ -201,7 +219,9 @@ lar <- function(X,y,rescale_y = T){
 }
 
 
-#' Compute the lar path based on the gram matrix gram = t(X) %*%X and the vector of marginal correlations cvec = t(X) %*% y. Faster than lar() if gram already computed.
+#' Compute the lar path based on the gram matrix gram = t(X) %*%X and the vector of marginal correlations cvec = t(X) %*% y.
+#' Faster than lar() if gram already computed.
+#' This is used by the bootstrap for speed.
 #' @noRd
 lar_gram <- function(gram,cvec){
 
@@ -355,25 +375,20 @@ lar_gram <- function(gram,cvec){
 #' larinf_out<- larinf(X,y)
 #' plot(larinf_out)
 #' larinf_out
-larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
+larinf <- function(X,y,B = 500, alpha = 0.05, m_bar = NULL){
 
   dm <- dim(X)
   n <- dm[1]
   p <- dm[2]
 
-  # center and normalize columns of X, center y
-  X <- scale(X) / sqrt(n-1)
-  y <- y - mean(y)
-  if(rescale_y == T) y <- y / sqrt(n)
-
-  lar_out <- lar(X,y,rescale_y = F)
+  lar_out <- lar(X,y)
   b_hat <- lar_out$b
   e_hat <- lar_out$ehat
   s_hat <- lar_out$s
   dA_hat <- c(1,sqrt(diff(1/lar_out$A^2)))
   C_hat <- lar_out$C
 
-  sigma_hat <- sqrt(sum(e_hat^2)/(n - p)) * ifelse(rescale_y,sqrt(n),1)
+  sigma_hat <- sqrt(sum(e_hat^2)/(n - p)) * sqrt(n)
 
   # estimate the number of nonzero entrance correlations
   mest_out <- mest(lar_out, m_bar = m_bar)
@@ -386,7 +401,16 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
 
   }
 
-  # compute the gram matrix
+  # center and rescale response and design columns
+  xbar <- apply(X,2,mean)
+  X <- X - matrix(xbar,n,p,byrow=T)
+  xnorm <- sqrt(apply(X**2,2,sum))
+  X <- X %*% diag(1/xnorm)
+  ybar <- mean(y)
+  y <- y - ybar
+  y <- y / sqrt(n)
+
+  # compute gram matrix
   gram <- t(X) %*% X
 
   # define b_bar, mu_bar, and C_bar
@@ -431,7 +455,7 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
     # obtain bootstrap version of sigma_hat
     mu_hat_boot <- drop(X %*% lar_boot_out$b[,p])
     e_hat_boot <- y_boot - mu_hat_boot
-    sigma_hat_boot <- sqrt(sum(e_hat_boot^2) / (n - p)) * ifelse(rescale_y,sqrt(n),1)
+    sigma_hat_boot <- sqrt(sum(e_hat_boot^2) / (n - p)) * sqrt(n)
 
     # get b_bar_boot
     b_bar_boot <- b_hat_boot[,1:m_bar,drop = FALSE]
@@ -505,18 +529,17 @@ larinf <- function(X,y,rescale_y = T,B = 500, alpha = 0.05, m_bar = NULL){
 }
 
 
-#' Estimate the number of steps in the prototypical LAR path
+#' Estimate the number of steps in LAR
 #' @noRd
 mest <- function(lar_out,m_bar = NULL){
 
   n <- length(lar_out$mu)
   p <- nrow(lar_out$b)
-  rescale_y <- lar_out$rescale_y
 
-  sigma_hat <- sqrt(sum(lar_out$ehat^2)/(n - p)) * ifelse(rescale_y,sqrt(n),1)
+  sigma_hat <- sqrt(sum(lar_out$ehat^2)/(n - p)) * sqrt(n)
 
   A <- c(Inf,lar_out$A)
-  W <- diff(1/A^2) * lar_out$C^2 / sigma_hat^2 * ifelse(rescale_y,n,1)
+  W <- diff(1/A^2) * lar_out$C^2 / sigma_hat^2 * n
 
   SW <- sum(W) - c(0,cumsum(W[1:(p-1)]))
 
@@ -614,9 +637,6 @@ mest <- function(lar_out,m_bar = NULL){
 #' @export
 plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, mlabel = NULL,...){
 
-
-  if(any(x$nnew) > 1) stop("LAR path has tied entrances: This plot function is not yet set up to depict paths with tied entrances.")
-
   C <- x$C
   b <- x$b
   ord <- x$ord
@@ -646,9 +666,17 @@ plot.lar <- function(x, omaadd = c(0,0,0,0), madd = c(0,0,0,0), m = NULL, mlabel
 
     kj <- which(ord == j)
 
-    lines(abs(cc[j,1:m]),col = ifelse(kj <= m,j,"lightgray"),lty = j)
+    lines(abs(cc[j,1:m]),col = ifelse(kj <= m,j,"lightgray"),lty = 3)
 
   }
+
+  lines(C[1:m])
+
+
+  # text(x = grconvertX(.7,from ="nfc", to ="user"),
+  #      y = grconvertY(.5,from ="nfc", to ="user"),
+  #      labels = "dotted lines \n are (c_k)_j")
+
 
   for(k in 1:mlabel){
 
