@@ -326,10 +326,9 @@ lar_gram <- function(gram,cvec){
 #'
 #' @param X a design matrix.
 #' @param y a response vector.
-#' @param rescale_y a logical. If `TRUE` then `y` is scaled by one over root n.
 #' @param B the number of Monte Carlo draws for approximating the bootstrap distribution.
 #' @param alpha the significance level.
-#' @param m_bar optional argument fixing the number of nonzero entrance correlations at which to threshold. By default the function estimates this with `mest()`.
+#' @param m_bar optional argument fixing the number of nonzero entrance correlations at which to threshold. If no value is specified then the number of LAR steps is estimated from the data.
 #' @return The `larinf()` function returns an object of class `larinf`. An object of class `larinf` is a list containing:
 #'
 #' \describe{

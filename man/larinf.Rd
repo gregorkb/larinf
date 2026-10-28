@@ -15,9 +15,7 @@ larinf(X, y, B = 500, alpha = 0.05, m_bar = NULL)
 
 \item{alpha}{the significance level.}
 
-\item{m_bar}{optional argument fixing the number of nonzero entrance correlations at which to threshold. By default the function estimates this with \code{mest()}.}
-
-\item{rescale_y}{a logical. If \code{TRUE} then \code{y} is scaled by one over root n.}
+\item{m_bar}{optional argument fixing the number of nonzero entrance correlations at which to threshold. If no value is specified then the number of LAR steps is estimated from the data.}
 }
 \value{
 The \code{larinf()} function returns an object of class \code{larinf}. An object of class \code{larinf} is a list containing:
