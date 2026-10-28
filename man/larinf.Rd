@@ -4,20 +4,20 @@
 \alias{larinf}
 \title{Least angle regression inference}
 \usage{
-larinf(X, y, rescale_y = T, B = 500, alpha = 0.05, m_bar = NULL)
+larinf(X, y, B = 500, alpha = 0.05, m_bar = NULL)
 }
 \arguments{
 \item{X}{a design matrix.}
 
 \item{y}{a response vector.}
 
-\item{rescale_y}{a logical. If \code{TRUE} then \code{y} is scaled by one over root n.}
-
 \item{B}{the number of Monte Carlo draws for approximating the bootstrap distribution.}
 
 \item{alpha}{the significance level.}
 
 \item{m_bar}{optional argument fixing the number of nonzero entrance correlations at which to threshold. By default the function estimates this with \code{mest()}.}
+
+\item{rescale_y}{a logical. If \code{TRUE} then \code{y} is scaled by one over root n.}
 }
 \value{
 The \code{larinf()} function returns an object of class \code{larinf}. An object of class \code{larinf} is a list containing:

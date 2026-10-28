@@ -4,14 +4,12 @@
 \alias{lar}
 \title{Least angle regression}
 \usage{
-lar(X, y, rescale_y = T)
+lar(X, y)
 }
 \arguments{
 \item{X}{a design matrix.}
 
 \item{y}{a response vector.}
-
-\item{rescale_y}{a logical. If \code{TRUE} then \code{y} is scaled by one over root n.}
 }
 \value{
 The \code{lar()} function returns an object of class \code{lar}. An object of class \code{lar} is a list containing:
@@ -24,21 +22,23 @@ The \code{lar()} function returns an object of class \code{lar}. An object of cl
 \item{\code{g}}{A vector containing the sequence of gamma values.}
 \item{\code{b}}{A matrix containing the sequence of step coefficient vectors.}
 \item{\code{cc}}{A matrix containing the correlations of each column of \code{X} with the residual across all LAR steps.}
-\item{\code{s}}{A vector giving the sign which which the entering variable on each step was signed.}
+\item{\code{s}}{A vector containing the signs with which the variables were signed upon entrance to the active set.}
 \item{\code{ord}}{A vector giving the order in which the columns of \code{X} entered the active set.}
 \item{\code{nnew}}{A vector giving the number of the columns of \code{X} entering on each step.}
 \item{\code{varnames}}{The names of the columns of \code{X} if non-null.}
-\item{\code{ehat}}{The residuals.}
-\item{\code{rescale_y}}{The argument given for \code{rescale_y}.}
-\item{\code{delta}}{The largest delta for which the separation conditions in Theorem 4.2 of Gregory and Nordman (2025+) are satisfied for this LAR path.}
+\item{\code{ehat}}{The residuals upon termination of LAR.}
+\item{\code{bn}}{Step coefficients transformed to the original scale of the data, with an intercept included, to account for the centering step.}
+\item{\code{tau}}{The largest tau for which condition M1 was satisfied for this LAR path.}
+\item{\code{delta}}{The largest delta for which condition M2 was satisfied for this LAR path.}
 }
 }
 \description{
 Runs the LAR algorithm.
 }
 \details{
-The \code{lar()} function centers the response vector \code{y} and centers the columns of \code{X} and scales them to have
-unit norm before executing the least angle regression algorithm.  The function can accommodate tied entrances.
+The \code{lar()} function will center the columns of \code{X} and then scaled them to have unit norm.
+Likewise, it will center \code{y} and scale the centered version by one over the square root of
+the sample size. The function can accommodate tied entrances.
 }
 \examples{
 # set parameters for generating data
@@ -67,7 +67,7 @@ plot(lar_y)
 Efron B., Hastie, T., Johnstone, I., and Tibshirani, R. (2004) Least angle regression.
 \emph{Annals of Statistics}, \strong{32(2)}: 407-499. \href{https://doi.org/10.1214/009053604000000067}{doi:10.1214/009053604000000067}
 
-Gregory, K. and Nordman, D. (2025+) Least angle regression inference.
+Gregory, K. B., & Nordman, D. J. (2026). New explanations and inference for least angle regression. \emph{arXiv preprint arXiv:2602.02491}.
 }
 \seealso{
 \code{\link[=plot.lar]{plot.lar()}} for plotting the least angle regression path.
